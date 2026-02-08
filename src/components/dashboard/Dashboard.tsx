@@ -5,9 +5,29 @@ import { BalanceChart } from '../charts/BalanceChart';
 import { SummaryCards } from './SummaryCards';
 import { AnnualTable } from '../table/AnnualTable';
 import { DataEditor } from '../editor/DataEditor';
-import { TrendingUp, Wallet, Clock } from 'lucide-react';
+import { TrendingUp, Wallet, Clock, CloudUpload, LogIn, LogOut } from 'lucide-react';
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+    userEmail: string | null;
+    isAuthLoading: boolean;
+    isSyncing: boolean;
+    isSaving: boolean;
+    authError: string | null;
+    onLogin: () => Promise<void>;
+    onLogout: () => Promise<void>;
+    onSave: () => Promise<void>;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({
+    userEmail,
+    isAuthLoading,
+    isSyncing,
+    isSaving,
+    authError,
+    onLogin,
+    onLogout,
+    onSave,
+}) => {
     const { data, results, updateData } = useStore();
 
     useEffect(() => {
@@ -49,6 +69,46 @@ export const Dashboard: React.FC = () => {
                             <option value={55}>55歳</option>
                             <option value={60}>60歳</option>
                         </select>
+                    </div>
+                    <div className="flex flex-col gap-1 min-w-[260px]">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">クラウド同期 (Supabase)</label>
+                        <div className="flex items-center gap-2">
+                            {userEmail ? (
+                                <>
+                                    <button
+                                        onClick={onSave}
+                                        disabled={isSaving || isSyncing}
+                                        className="px-3 py-1.5 rounded text-sm bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-300 flex items-center gap-1"
+                                    >
+                                        <CloudUpload size={14} />
+                                        {isSaving ? '保存中...' : 'クラウド保存'}
+                                    </button>
+                                    <button
+                                        onClick={onLogout}
+                                        disabled={isAuthLoading}
+                                        className="px-3 py-1.5 rounded text-sm border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 flex items-center gap-1"
+                                    >
+                                        <LogOut size={14} />
+                                        ログアウト
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={onLogin}
+                                    disabled={isAuthLoading}
+                                    className="px-3 py-1.5 rounded text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 flex items-center gap-1"
+                                >
+                                    <LogIn size={14} />
+                                    Googleでログイン
+                                </button>
+                            )}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                            {isSyncing && 'DBから設定を読み込み中...'}
+                            {!isSyncing && userEmail && `ログイン中: ${userEmail}`}
+                            {!isSyncing && !userEmail && '未ログイン'}
+                        </div>
+                        {authError && <div className="text-xs text-red-500">{authError}</div>}
                     </div>
                 </div>
             </header>

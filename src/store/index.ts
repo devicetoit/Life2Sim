@@ -16,6 +16,8 @@ interface AppState {
     reset: () => void;
 }
 
+export const STORAGE_KEY = 'life-plan-storage-v1.10';
+
 export const useStore = create<AppState>()(
     persist(
         (set, get) => ({
@@ -60,7 +62,7 @@ export const useStore = create<AppState>()(
             }
         }),
         {
-            name: 'life-plan-storage-v1.10', // Incremented to force auto-reset/refresh
+            name: STORAGE_KEY,
             partialize: (state) => ({ data: state.data }), // Only persist input data
         }
     )

@@ -28,7 +28,7 @@ export const Dashboard: React.FC = () => {
                         <TrendingUp className="text-indigo-600" />
                         Life2Sim
                     </h1>
-                    <p className="text-sm text-gray-500">家族の未来を描くライフシミュレーターです。</p>
+                    <p className="text-sm text-gray-500">家族の未来を描くライフシミュレーター</p>
                 </div>
 
                 <div className="flex gap-4 items-end">

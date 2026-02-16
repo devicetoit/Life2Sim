@@ -5,82 +5,172 @@ import { BalanceChart } from '../charts/BalanceChart';
 import { SummaryCards } from './SummaryCards';
 import { AnnualTable } from '../table/AnnualTable';
 import { DataEditor } from '../editor/DataEditor';
-import { TrendingUp, Wallet, Clock } from 'lucide-react';
+import { TrendingUp, Wallet, Clock, CloudUpload, LogIn, LogOut, Save } from 'lucide-react';
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+    userEmail: string | null;
+    isAuthLoading: boolean;
+    isSyncing: boolean;
+    isSaving: boolean;
+    onLogin: () => Promise<void>;
+    onLogout: () => Promise<void>;
+    onSave: () => Promise<void>;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({
+    userEmail,
+    isAuthLoading,
+    isSyncing,
+    isSaving,
+    onLogin,
+    onLogout,
+    onSave,
+}) => {
     const { data, results, updateData } = useStore();
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
     useEffect(() => {
         // Initial Calc
         if (results.length === 0) {
-            useStore.getState().recalc(); // Call recalc from store directly
+            useStore.getState().recalc();
         }
-    }, [results.length]); // Only depend on results.length
+    }, [results.length]);
 
     if (!results || results.length === 0) return <div>Loading...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header */}
-            <header className="bg-white border-b px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                        <TrendingUp className="text-indigo-600" />
-                        Life2Sim
-                    </h1>
-                    <p className="text-sm text-gray-500">家族の未来を描くライフシミュレーター</p>
+        <div className="h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
+            {/* Header - Premium Navigation */}
+            <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-8 py-5 flex flex-col xl:flex-row xl:items-center justify-between gap-6 sticky top-0 z-30 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <div className="bg-premium-gradient p-2.5 rounded-2xl shadow-lg shadow-indigo-100 rotate-3">
+                        <TrendingUp className="text-white w-7 h-7 -rotate-3" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-display font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                            Life2Sim <span className="text-indigo-600 font-bold text-[10px] tracking-widest px-2 py-0.5 bg-indigo-50 rounded-lg border border-indigo-100">シミュレーター</span>
+                        </h1>
+                        <p className="text-[11px] text-slate-400 font-bold tracking-wider">家族の未来を描くライフシミュレーター</p>
+                    </div>
                 </div>
 
-                <div className="flex gap-4 items-end">
-                    {/* Simple Toggle for Death Scenario */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">万一モード (死亡年齢)</label>
-                        <select
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                            value={data.settings.deathAge || 0}
-                            onChange={(e) => updateData(d => ({
-                                ...d,
-                                settings: { ...d.settings, deathAge: Number(e.target.value) }
-                            }))}
+                <div className="flex flex-wrap items-center gap-6">
+                    {/* Simplified Risk Mgmt */}
+                    <div className="flex items-center gap-4 bg-rose-50/40 p-1 pl-4 rounded-2xl border border-rose-100/50 hover:bg-rose-50 transition-colors">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest leading-none mb-1.5 mt-1">もしもの時のシミュレーション</span>
+                            <select
+                                className="bg-transparent text-sm font-bold text-rose-700 outline-none cursor-pointer pb-1 pr-6"
+                                value={data.settings.deathAge || 0}
+                                onChange={(e) => updateData(d => ({
+                                    ...d,
+                                    settings: { ...d.settings, deathAge: Number(e.target.value) }
+                                }))}
+                            >
+                                <option value={0}>100歳まで生存 (標準)</option>
+                                <option value={45}>もしもの時：45歳</option>
+                                <option value={50}>もしもの時：50歳</option>
+                                <option value={55}>もしもの時：55歳</option>
+                                <option value={60}>もしもの時：60歳</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Sidebar Toggle and Auth / Sync */}
+                    <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/50">
+                        <button
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${isSidebarOpen ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-200 shadow-sm'}`}
                         >
-                            <option value={0}>なし (標準)</option>
-                            <option value={45}>45歳</option>
-                            <option value={50}>50歳</option>
-                            <option value={55}>55歳</option>
-                            <option value={60}>60歳</option>
-                        </select>
+                            <Save size={14} />
+                            {isSidebarOpen ? '設定を隠す' : '設定を表示'}
+                        </button>
+
+                        <div className="w-[1px] h-6 bg-slate-200 mx-1" />
+
+                        {userEmail ? (
+                            <>
+                                <div className="px-3 py-1 flex flex-col justify-center">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Cloud Sync</span>
+                                    <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">{userEmail}</span>
+                                </div>
+                                <button
+                                    onClick={onSave}
+                                    disabled={isSaving || isSyncing}
+                                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    <CloudUpload size={14} className={isSaving ? 'animate-bounce' : ''} />
+                                    {isSaving ? 'Saving...' : '保存'}
+                                </button>
+                                <button
+                                    onClick={onLogout}
+                                    disabled={isAuthLoading}
+                                    className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-100 transition-all shadow-sm"
+                                    title="Logout"
+                                >
+                                    <LogOut size={16} />
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={onLogin}
+                                disabled={isAuthLoading}
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition-all flex items-center gap-2 shadow-sm hover:translate-y-[-1px]"
+                            >
+                                <LogIn size={16} className="text-indigo-500" />
+                                クラウド同期
+                            </button>
+                        )}
                     </div>
                 </div>
             </header>
 
-            <main className="flex-1 p-8 overflow-y-auto">
-                <SummaryCards results={results} />
+            <main className="flex-1 overflow-hidden flex flex-row relative">
+                <div className={`flex-1 p-8 overflow-y-auto bg-slate-50/30 scroll-smooth transition-all duration-300`}>
+                    <div className="max-w-[1400px] mx-auto">
+                        <SummaryCards results={results} />
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <Wallet className="text-indigo-500" />
-                            収支推移 (収入・支出)
-                        </h2>
-                        <BalanceChart results={results} />
-                    </div>
+                        <div className={`grid grid-cols-1 ${isSidebarOpen ? '2xl:grid-cols-2' : 'xl:grid-cols-2'} gap-8 mt-10`}>
+                            <div className="bg-white p-8 rounded-[2rem] premium-shadow border border-slate-200/60 ring-1 ring-slate-100">
+                                <h2 className="text-xl font-display font-bold text-slate-800 mb-8 flex items-center gap-3">
+                                    <div className="p-2.5 bg-indigo-50 rounded-xl">
+                                        <Wallet className="text-indigo-500 w-5 h-5" />
+                                    </div>
+                                    収支推移 (入るお金・使うお金)
+                                </h2>
+                                <BalanceChart results={results} />
+                            </div>
 
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <Clock className="text-indigo-500" />
-                            資産残高推移
-                        </h2>
-                        <AssetChart results={results} assets={data.assets} />
+                            <div className="bg-white p-8 rounded-[2rem] premium-shadow border border-slate-200/60 ring-1 ring-slate-100">
+                                <h2 className="text-xl font-display font-bold text-slate-800 mb-8 flex items-center gap-3">
+                                    <div className="p-2.5 bg-emerald-50 rounded-xl">
+                                        <Clock className="text-emerald-500 w-5 h-5" />
+                                    </div>
+                                    資産（貯蓄・投資）の推移
+                                </h2>
+                                <AssetChart results={results} assets={data.assets} />
+                            </div>
+                        </div>
+
+                        <div className="mt-10 mb-10 bg-white p-8 rounded-[2rem] premium-shadow border border-slate-200/60 ring-1 ring-slate-100">
+                            <h2 className="text-xl font-display font-bold text-slate-800 mb-8 px-2">生涯の家計簿 (年度別詳細)</h2>
+                            <AnnualTable results={results} />
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800 mb-6">年間収支詳細 (5年刻み)</h2>
-                    <AnnualTable results={results} />
-                </div>
+                {/* Right Sidebar Editor */}
+                <aside className={`${isSidebarOpen ? 'w-[400px] translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0'} transition-all duration-300 ease-in-out border-l border-slate-200 bg-white overflow-hidden flex flex-col`}>
+                    <div className="w-[400px] h-full overflow-y-auto">
+                        <DataEditor isSidebar={true} />
+                    </div>
+                </aside>
             </main>
 
-            <DataEditor />
+            {/* Mobile Editor Trigger */}
+            <div className="lg:hidden">
+                <DataEditor />
+            </div>
         </div>
     );
 };

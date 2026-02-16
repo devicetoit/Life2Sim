@@ -40,7 +40,7 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
 
     return (
         <div className="h-96 w-full bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4">資産推移 (積み上げ)</h3>
+            <h3 className="text-lg font-semibold mb-4">貯金の増えかた (合計)</h3>
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />

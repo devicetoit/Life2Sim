@@ -16,7 +16,11 @@ const validateProjectData = (data: unknown): data is ProjectData => {
     );
 };
 
-export const DataEditor: React.FC = () => {
+interface DataEditorProps {
+    isSidebar?: boolean;
+}
+
+export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => {
     const { data, updateData, importData } = useStore();
     const [isOpen, setIsOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -101,93 +105,56 @@ export const DataEditor: React.FC = () => {
         a.click();
     };
 
-    if (!isOpen) {
+    if (!isOpen && !isSidebar) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 p-4 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2 z-50"
+                className="fixed bottom-8 right-8 p-4 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all flex items-center gap-3 z-50 hover:translate-y-[-2px] active:translate-y-[0px]"
             >
-                <Save size={20} />
-                <span className="font-medium">データ編集・出力</span>
+                <Save size={20} className="text-indigo-400" />
+                <span className="font-bold text-sm tracking-tight text-white/90">データをいじる・保存・読込</span>
             </button>
         );
     }
 
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end">
-            <div className="w-full max-w-2xl bg-gray-50 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-                <header className="p-4 bg-white border-b flex justify-between items-center">
-                    <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800">
-                        <Save className="text-indigo-600" />
-                        シミュレーション・パラメータ編集
+    const editorContent = (
+        <div className={`${isSidebar ? 'w-full h-full' : 'w-full max-w-2xl h-full shadow-2xl'} bg-slate-50 flex flex-col font-sans`}>
+            <header className="p-6 bg-white border-b border-slate-200/60 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-50 p-2 rounded-lg">
+                        <Save size={20} className="text-indigo-600" />
+                    </div>
+                    <h2 className="text-xl font-display font-bold text-slate-800">
+                        シミュレーター設定
                     </h2>
-                    <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">
-                        <ChevronUp />
+                </div>
+                {!isSidebar && (
+                    <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors">
+                        <ChevronUp size={24} />
                     </button>
+                )}
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                    {/* Import Section */}
-                    <section className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">インポート</h3>
-                        <div
-                            onDrop={handleDrop}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging
-                                ? 'border-indigo-500 bg-indigo-50'
-                                : 'border-gray-300 hover:border-gray-400'
-                                }`}
-                        >
-                            <FileJson className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                            <p className="text-gray-600 mb-2">JSONファイルをドラッグ&ドロップ</p>
-                            <p className="text-gray-400 text-sm mb-4">または</p>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".json"
-                                onChange={handleFileSelect}
-                                className="hidden"
-                            />
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 mx-auto"
-                            >
-                                <Upload size={16} />
-                                ファイルを選択
-                            </button>
-                        </div>
-                        {importStatus && (
-                            <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${importStatus.type === 'success'
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-red-50 text-red-700'
-                                }`}>
-                                {importStatus.type === 'success'
-                                    ? <CheckCircle size={16} />
-                                    : <AlertCircle size={16} />
-                                }
-                                {importStatus.message}
-                            </div>
-                        )}
-                    </section>
-
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-10">
                     {/* Export Section */}
-                    <section className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">エクスポート</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60 transition-all hover:border-indigo-100">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-5">保存と書き出し</h3>
                         <div className="flex gap-4">
                             <button onClick={exportJSON} className="flex-1 flex items-center justify-center gap-2 p-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors">
-                                <Download size={16} /> JSON出力
+                            <Download size={16} /> JSONで保存
                             </button>
                             <button onClick={exportCSV} className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors">
-                                <Download size={16} /> CSV出力
+                            <Download size={16} /> CSVで書き出し
                             </button>
                         </div>
                     </section>
 
-                    {/* People Section - Now before Incomes */}
-                    <section>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-gray-800 border-l-4 border-pink-500 pl-3">家族構成</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-display font-bold text-slate-800">家族構成</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Family Members</p>
+                        </div>
                             <button
                                 onClick={() => updateData(d => ({
                                     ...d,
@@ -270,10 +237,12 @@ export const DataEditor: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* Incomes Section - Table Format */}
-                    <section>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-gray-800 border-l-4 border-indigo-500 pl-3">収入設定</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-display font-bold text-slate-800">収入の予定</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Income Sources</p>
+                        </div>
                             <button
                                 onClick={() => updateData(d => ({
                                     ...d,
@@ -283,7 +252,7 @@ export const DataEditor: React.FC = () => {
                                         name: '新規収入',
                                         category: 'salary' as const,
                                         amount: 0,
-                                        startAge: 39,
+                                    startAge: 40,
                                         endAge: 65,
                                         taxRate: 0.8
                                     }]
@@ -343,8 +312,8 @@ export const DataEditor: React.FC = () => {
                                                             incomes: d.incomes.map(i => i.id === inc.id ? { ...i, category: e.target.value as any } : i)
                                                         }))}
                                                     >
-                                                        <option value="salary">給与</option>
-                                                        <option value="public_pension">年金</option>
+                                                    <option value="salary">給与（手取り）</option>
+                                                    <option value="public_pension">公的年金</option>
                                                         <option value="other">その他</option>
                                                     </select>
                                                 </td>
@@ -397,16 +366,18 @@ export const DataEditor: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* Assets Section - Table Format */}
-                    <section>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-gray-800 border-l-4 border-green-500 pl-3">資産・運用設定</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-display font-bold text-slate-800">貯金と運用の設定</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Assets & Investments</p>
+                        </div>
                             <button
                                 onClick={() => updateData(d => ({
                                     ...d,
                                     assets: [...d.assets, {
                                         id: `a${Date.now()}`,
-                                        name: '新規資産',
+                                    name: '新しい貯金',
                                         type: 'cash' as const,
                                         term: 'short' as const,
                                         initialAmount: 0,
@@ -423,9 +394,9 @@ export const DataEditor: React.FC = () => {
                                 <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                                     <tr>
                                         <th className="px-3 py-2 text-left">名称</th>
-                                        <th className="px-3 py-2 text-left">期間</th>
-                                        <th className="px-3 py-2 text-right">初期残高</th>
-                                        <th className="px-3 py-2 text-right">利回り</th>
+                                    <th className="px-3 py-2 text-left">種類</th>
+                                    <th className="px-3 py-2 text-right">現在の金額</th>
+                                    <th className="px-3 py-2 text-right">増える割合(年)</th>
                                         <th className="px-3 py-2 w-8"></th>
                                     </tr>
                                 </thead>
@@ -451,9 +422,9 @@ export const DataEditor: React.FC = () => {
                                                         assets: d.assets.map(a => a.id === asset.id ? { ...a, term: e.target.value as any } : a)
                                                     }))}
                                                 >
-                                                    <option value="short">短期</option>
-                                                    <option value="medium">中期</option>
-                                                    <option value="long">長期</option>
+                                                <option value="short">普通預金など</option>
+                                                <option value="medium">定期預金など</option>
+                                                <option value="long">投資信託など</option>
                                                 </select>
                                             </td>
                                             <td className="px-3 py-2">
@@ -497,9 +468,11 @@ export const DataEditor: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* Housing Section */}
-                    <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-l-4 border-blue-500 pl-3">住宅設定</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex flex-col mb-6">
+                        <h3 className="text-lg font-display font-bold text-slate-800">マイホームの予定</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Housing & Mortgage</p>
+                    </div>
                         <div className="bg-white p-4 rounded-lg border shadow-sm space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -529,7 +502,7 @@ export const DataEditor: React.FC = () => {
                             </div>
 
                             <div className="pt-4 border-t">
-                                <h4 className="text-sm font-bold text-gray-700 mb-3">ローン設定</h4>
+                            <h4 className="text-sm font-bold text-gray-700 mb-3">住宅ローンの内容</h4>
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <label className="text-xs text-gray-400 block mb-1">借入金額(万円)</label>
@@ -559,7 +532,7 @@ export const DataEditor: React.FC = () => {
 
                                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                                     <div className="flex justify-between items-center mb-2">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">段階金利設定</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">金利の切り替わり</label>
                                         <button
                                             onClick={() => updateData(d => ({
                                                 ...d,
@@ -576,8 +549,8 @@ export const DataEditor: React.FC = () => {
                                     <table className="w-full text-xs">
                                         <thead>
                                             <tr>
-                                                <th className="text-left pb-1 font-normal text-gray-400">期間 (年)</th>
-                                                <th className="text-left pb-1 font-normal text-gray-400">利率 (%)</th>
+                                            <th className="text-left pb-1 font-normal text-gray-400">何年後まで</th>
+                                            <th className="text-left pb-1 font-normal text-gray-400">金利 (%)</th>
                                                 <th className="w-6"></th>
                                             </tr>
                                         </thead>
@@ -635,7 +608,7 @@ export const DataEditor: React.FC = () => {
 
                                 <div className="grid grid-cols-2 gap-4 mt-4">
                                     <div>
-                                        <label className="text-xs text-gray-400 block mb-1">団信種類</label>
+                                    <label className="text-xs text-gray-400 block mb-1">ローン保険(団信)の種類</label>
                                         <input
                                             className="w-full text-sm border-gray-200 rounded"
                                             value={data.housing.danshinType || ''}
@@ -647,7 +620,7 @@ export const DataEditor: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400 block mb-1">団信上乗せ金利(%)</label>
+                                    <label className="text-xs text-gray-400 block mb-1">保険による金利上乗せ(%)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -675,7 +648,7 @@ export const DataEditor: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400 block mb-1">全疾病上乗せ金利(%)</label>
+                                    <label className="text-xs text-gray-400 block mb-1">病気保障の追加利率(%)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -732,9 +705,11 @@ export const DataEditor: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* Living Cost Steps Section */}
-                    <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-l-4 border-orange-500 pl-3">生活費ステップ</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex flex-col mb-6">
+                        <h3 className="text-lg font-display font-bold text-slate-800">毎月の生活費（基本）</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Basic Living Costs</p>
+                    </div>
                         <div className="space-y-4">
                             {data.livingCostSteps.map((step) => {
                                 const updateBreakdown = (f: string, val: number) => {
@@ -821,9 +796,11 @@ export const DataEditor: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* Life Events Section */}
-                    <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-l-4 border-purple-500 pl-3">ライフイベント</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex flex-col mb-6">
+                        <h3 className="text-lg font-display font-bold text-slate-800">たまの出費（旅行・車など）</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Life Events & Large Expenses</p>
+                    </div>
                         <div className="space-y-2">
                             {data.events.map((event) => (
                                 <div key={event.id} className="bg-white p-3 rounded-lg border shadow-sm">
@@ -904,8 +881,11 @@ export const DataEditor: React.FC = () => {
 
 
                     {/* Contributions Section */}
-                    <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-l-4 border-cyan-500 pl-3">積立設定</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex flex-col mb-6">
+                        <h3 className="text-lg font-display font-bold text-slate-800">積立設定</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Regular Savings & Contributions</p>
+                    </div>
                         <div className="space-y-2">
                             {data.contributions.map((contrib) => (
                                 <div key={contrib.id} className="bg-white p-3 rounded-lg border shadow-sm">
@@ -985,8 +965,11 @@ export const DataEditor: React.FC = () => {
                     </section>
 
                     {/* Education Plans Section */}
-                    <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-l-4 border-rose-500 pl-3">教育費設定</h3>
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
+                    <div className="flex flex-col mb-6">
+                        <h3 className="text-lg font-display font-bold text-slate-800">教育費設定</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Education Planning</p>
+                    </div>
                         <div className="space-y-2">
                             {data.educationPlans.map((plan) => {
                                 const child = data.people.find(p => p.id === plan.childId);
@@ -1176,6 +1159,7 @@ export const DataEditor: React.FC = () => {
                     </section>
                 </div>
 
+            {!isSidebar && (
                 <footer className="p-4 bg-white border-t flex gap-4">
                     <button
                         onClick={() => setIsOpen(false)}
@@ -1185,7 +1169,7 @@ export const DataEditor: React.FC = () => {
                     </button>
                     <button
                         onClick={() => {
-                            if (window.confirm('すべての編集内容を破棄し、報告書の標準設定に戻します。よろしいですか？')) {
+                            if (window.confirm('すべての編集内容を破棄し、標準データに戻します。よろしいですか？')) {
                                 useStore.getState().reset();
                             }
                         }}
@@ -1194,6 +1178,16 @@ export const DataEditor: React.FC = () => {
                         初期化
                     </button>
                 </footer>
+            )}
+        </div>
+    );
+
+    if (isSidebar) return editorContent;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end">
+            <div className="animate-in slide-in-from-right duration-300 h-full w-full max-w-2xl">
+                {editorContent}
             </div>
         </div>
     );

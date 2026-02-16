@@ -12,6 +12,7 @@ interface DashboardProps {
     isAuthLoading: boolean;
     isSyncing: boolean;
     isSaving: boolean;
+    authError: string | null;
     onLogin: () => Promise<void>;
     onLogout: () => Promise<void>;
     onSave: () => Promise<void>;
@@ -22,6 +23,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     isAuthLoading,
     isSyncing,
     isSaving,
+    authError,
     onLogin,
     onLogout,
     onSave,
@@ -124,6 +126,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </div>
             </header>
+
+            {authError && (
+                <div className="bg-rose-50 border-b border-rose-100 px-8 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top duration-300">
+                    <div className="p-1 bg-rose-100 rounded-lg">
+                        <Save size={14} className="text-rose-600" />
+                    </div>
+                    <p className="text-sm font-bold text-rose-700">{authError}</p>
+                </div>
+            )}
 
             <main className="flex-1 overflow-hidden flex flex-row relative">
                 <div className={`flex-1 p-8 overflow-y-auto bg-slate-50/30 scroll-smooth transition-all duration-300`}>

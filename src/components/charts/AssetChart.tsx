@@ -46,7 +46,7 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="age" label={{ value: '年齢', position: 'insideBottomRight', offset: -5 }} />
                     <YAxis label={{ value: '万円', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip />
+                    <Tooltip formatter={(value: number) => Math.round(value).toLocaleString() + '万円'} />
                     <Legend />
                     {keys.map((key, index) => (
                         <Area

@@ -33,36 +33,51 @@ export const SummaryCards: React.FC<Props> = ({ results }) => {
     const isSafe = bankruptcyAge === -1;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className={`p-4 rounded-lg border ${!isSafe ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-                <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className={!isSafe ? "text-red-500" : "text-green-500"} />
-                    <h3 className="font-semibold text-gray-700">資産枯渇</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            <div className={`p-8 rounded-[2rem] border premium-shadow transition-all hover:scale-[1.02] ${!isSafe ? 'bg-rose-50 border-rose-100 ring-4 ring-rose-50/50' : 'bg-emerald-50 border-emerald-100 ring-4 ring-emerald-50/50'}`}>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className={`p-2 rounded-xl ${!isSafe ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                        <AlertTriangle size={20} />
+                    </div>
+                    <h3 className="font-bold text-slate-700 font-display">お金がなくなる時期</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
-                    {isSafe ? '枯渇なし' : `${bankruptcyAge}歳`}
+                <p className={`text-4xl font-display font-bold tracking-tight mb-2 ${!isSafe ? 'text-rose-700' : 'text-emerald-700'}`}>
+                    {isSafe ? 'ずっと安心' : `${bankruptcyAge}歳ごろ`}
                 </p>
-                {!isSafe && <p className="text-sm text-red-600">不足額: {Math.abs(Math.round(bankruptcyAmount))}万円</p>}
+                {isSafe ? (
+                    <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider">100歳までプラスを維持</p>
+                ) : (
+                    <p className="text-xs text-rose-600 font-bold uppercase tracking-wider">不足額: {Math.abs(Math.round(bankruptcyAmount)).toLocaleString()}万円</p>
+                )}
             </div>
 
-            <div className="p-4 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                    <TrendingDown className="text-blue-500" />
-                    <h3 className="font-semibold text-gray-700">最低資産残高</h3>
+            <div className="p-8 rounded-[2rem] border border-slate-200/60 bg-white premium-shadow transition-all hover:scale-[1.02]">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-xl bg-blue-50 text-blue-500 font-bold">
+                        <TrendingDown size={20} />
+                    </div>
+                    <h3 className="font-bold text-slate-700 font-display">いちばん貯金が少ない時</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
-                    {Math.round(minBalance)}万円
+                <p className="text-4xl font-display font-bold text-slate-900 tracking-tight mb-2">
+                    {Math.round(minBalance).toLocaleString()}万円
                 </p>
-                <p className="text-sm text-gray-500">({minBalanceAge}歳時点)</p>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                    <span className="text-blue-500">{minBalanceAge}歳</span> のとき
+                </p>
             </div>
 
-            <div className="p-4 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                    <Wallet className="text-purple-500" />
-                    <h3 className="font-semibold text-gray-700">最終残高 ({results[results.length - 1].age}歳)</h3>
+            <div className="p-8 rounded-[2rem] border border-slate-200/60 bg-white premium-shadow transition-all hover:scale-[1.02]">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500 font-bold">
+                        <Wallet size={20} />
+                    </div>
+                    <h3 className="font-bold text-slate-700 font-display">生涯のさいごに残るお金</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
-                    {Math.round(results[results.length - 1].assets.total)}万円
+                <p className="text-4xl font-display font-bold text-slate-900 tracking-tight mb-2">
+                    {Math.round(results[results.length - 1].assets.total).toLocaleString()}万円
+                </p>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                    <span className="text-indigo-500">{results[results.length - 1].age}歳</span> のとき
                 </p>
             </div>
         </div>

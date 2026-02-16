@@ -42,7 +42,7 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="age" />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip formatter={(value: number) => Math.round(value).toLocaleString() + '万円'} />
                     <Legend />
                     {expenseConfigs.map(cfg => (
                         <Bar key={cfg.key} dataKey={cfg.key} name={cfg.name} stackId="a" fill={cfg.color} />

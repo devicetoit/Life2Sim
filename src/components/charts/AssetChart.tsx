@@ -39,14 +39,14 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
     const palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
     return (
-        <div className="h-96 w-full bg-white p-4 rounded-lg shadow">
+        <div className="h-96 w-full bg-white p-2 rounded-lg">
             <h3 className="text-lg font-semibold mb-4">貯金の増えかた (合計)</h3>
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="age" label={{ value: '年齢', position: 'insideBottomRight', offset: -5 }} />
                     <YAxis label={{ value: '万円', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value: number) => Math.round(value).toLocaleString() + '万円'} />
+                    <Tooltip formatter={(value: number) => value.toFixed(1).toLocaleString() + '万円'} />
                     <Legend />
                     {keys.map((key, index) => (
                         <Area

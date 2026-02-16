@@ -35,14 +35,14 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
     ];
 
     return (
-        <div className="h-96 w-full bg-white p-4 rounded-lg shadow">
+        <div className="h-96 w-full bg-white p-2 rounded-lg">
             <h3 className="text-lg font-semibold mb-4">年間収支分析 (報告書形式)</h3>
             <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="age" />
                     <YAxis />
-                    <Tooltip formatter={(value: number) => Math.round(value).toLocaleString() + '万円'} />
+                    <Tooltip formatter={(value: number) => value.toFixed(1).toLocaleString() + '万円'} />
                     <Legend />
                     {expenseConfigs.map(cfg => (
                         <Bar key={cfg.key} dataKey={cfg.key} name={cfg.name} stackId="a" fill={cfg.color} />

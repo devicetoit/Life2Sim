@@ -41,7 +41,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (!results || results.length === 0) return <div>読み込み中...</div>;
 
     return (
-        <div className="h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
+        <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden">
             {/* Header - Premium Navigation */}
             <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-8 py-5 flex flex-col xl:flex-row xl:items-center justify-between gap-6 sticky top-0 z-30 shadow-sm">
                 <div className="flex items-center gap-4">
@@ -142,8 +142,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
             )}
 
-            <main className="flex-1 overflow-hidden flex flex-row relative">
-                <div className={`flex-1 p-8 overflow-y-auto bg-slate-50/30 scroll-smooth transition-all duration-300`}>
+            <main className="flex-1 min-h-0 flex flex-row relative">
+                <div className={`flex-1 p-8 bg-slate-50/30 scroll-smooth transition-all duration-300`}>
                     <div className="max-w-[1400px] mx-auto">
                         <SummaryCards results={results} />
 

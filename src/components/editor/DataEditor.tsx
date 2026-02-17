@@ -129,7 +129,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                     </h2>
                 </div>
                 {!isSidebar && (
-                    <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors">
+                    <button aria-label="閉じる" onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors">
                         <ChevronUp size={24} />
                     </button>
                 )}
@@ -187,6 +187,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <input
                                                 className="w-full border-none p-0 focus:ring-0 bg-transparent"
+                                                aria-label="家族メンバー名"
                                                 value={person.name}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -198,6 +199,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <input
                                                 type="number"
                                                 className="w-full border-none p-0 focus:ring-0 bg-transparent"
+                                                aria-label="家族メンバーの生年"
                                                 value={person.birthYear}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -208,6 +210,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <select
                                                 className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                aria-label="家族メンバーの続柄"
                                                 value={person.relation}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -224,6 +227,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             {person.relation !== 'self' && (
                                                 <button
                                                     onClick={() => updateData(d => ({ ...d, people: d.people.filter(p => p.id !== person.id) }))}
+                                                    aria-label="家族メンバーを削除"
                                                     className="text-gray-300 hover:text-red-500"
                                                 >
                                                     <Trash2 size={14} />
@@ -282,6 +286,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <td className="px-2 py-1">
                                                 <select
                                                     className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                    aria-label="収入対象者"
                                                     value={inc.personId}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -296,6 +301,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <td className="px-2 py-1">
                                                 <input
                                                     className="w-full border-none p-0 focus:ring-0 bg-transparent text-sm"
+                                                    aria-label="収入名称"
                                                     value={inc.name}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -306,6 +312,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <td className="px-2 py-1">
                                                 <select
                                                     className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                    aria-label="収入カテゴリ"
                                                     value={inc.category}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -321,6 +328,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 <input
                                                     type="number"
                                                     className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    aria-label="収入金額"
                                                     value={inc.amount}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -332,6 +340,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 <input
                                                     type="number"
                                                     className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    aria-label="収入開始年齢"
                                                     value={inc.startAge}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -343,6 +352,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 <input
                                                     type="number"
                                                     className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    aria-label="収入終了年齢"
                                                     value={inc.endAge}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -353,6 +363,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <td className="px-2 py-1">
                                                 <button
                                                     onClick={() => updateData(d => ({ ...d, incomes: d.incomes.filter(i => i.id !== inc.id) }))}
+                                                    aria-label="収入項目を削除"
                                                     className="text-gray-300 hover:text-red-500"
                                                 >
                                                     <Trash2 size={14} />
@@ -406,6 +417,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <input
                                                 className="w-full border-none p-0 focus:ring-0 bg-transparent font-medium"
+                                                aria-label="資産名称"
                                                 value={asset.name}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -416,6 +428,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <select
                                                 className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                aria-label="資産種類"
                                                 value={asset.term}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -431,6 +444,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <input
                                                 type="number"
                                                 className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                aria-label="資産現在額"
                                                 value={asset.initialAmount}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -444,6 +458,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     type="number"
                                                     step="0.1"
                                                     className="w-12 border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    aria-label="資産の年利率"
                                                     value={asset.rate}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -456,6 +471,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <button
                                                 onClick={() => updateData(d => ({ ...d, assets: d.assets.filter(a => a.id !== asset.id) }))}
+                                                aria-label="資産項目を削除"
                                                 className="text-gray-300 hover:text-red-500"
                                             >
                                                 <Trash2 size={14} />
@@ -595,6 +611,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                                 interestPeriods: d.housing.interestPeriods.filter((_, i) => i !== idx)
                                                             }
                                                         }))}
+                                                        aria-label="金利期間を削除"
                                                         className="text-gray-300 hover:text-red-500"
                                                     >
                                                         <Trash2 size={12} />
@@ -745,6 +762,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         </div>
                                         <button
                                             onClick={() => updateData(d => ({ ...d, livingCostSteps: d.livingCostSteps.filter(s => s.id !== step.id) }))}
+                                            aria-label="生活費ステップを削除"
                                             className="text-gray-300 hover:text-red-500"
                                         >
                                             <Trash2 size={16} />
@@ -807,6 +825,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 <div className="flex justify-between items-center mb-2">
                                     <input
                                         className="font-medium text-gray-800 border-none p-0 focus:ring-0 flex-1"
+                                        aria-label="イベント名"
                                         value={event.name}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -815,6 +834,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     />
                                     <button
                                         onClick={() => updateData(d => ({ ...d, events: d.events.filter(ev => ev.id !== event.id) }))}
+                                        aria-label="イベントを削除"
                                         className="text-gray-300 hover:text-red-500"
                                     >
                                         <Trash2 size={16} />
@@ -892,6 +912,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 <div className="flex justify-between items-center mb-2">
                                     <input
                                         className="font-medium text-gray-800 border-none p-0 focus:ring-0 flex-1"
+                                        aria-label="積立設定名"
                                         value={contrib.name}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -900,6 +921,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     />
                                     <button
                                         onClick={() => updateData(d => ({ ...d, contributions: d.contributions.filter(c => c.id !== contrib.id) }))}
+                                        aria-label="積立設定を削除"
                                         className="text-gray-300 hover:text-red-500"
                                     >
                                         <Trash2 size={16} />
@@ -1013,6 +1035,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <span className="text-xs bg-gray-100 px-2 py-1 rounded">{person?.name}</span>
                                             <input
                                                 className="font-medium text-gray-800 border-none p-0 focus:ring-0"
+                                                aria-label="個人固定費名"
                                                 value={cost.name}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -1022,6 +1045,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         </div>
                                         <button
                                             onClick={() => updateData(d => ({ ...d, personalFixedCosts: d.personalFixedCosts.filter(c => c.id !== cost.id) }))}
+                                            aria-label="個人固定費を削除"
                                             className="text-gray-300 hover:text-red-500"
                                         >
                                             <Trash2 size={16} />
@@ -1194,10 +1218,14 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                         </button>
                     </div>
                     {importStatus && (
-                        <div className={`mt-4 p-2 rounded text-[10px] flex items-center gap-2 ${importStatus.type === 'success'
-                            ? 'bg-green-50 text-green-700'
-                            : 'bg-red-50 text-red-700'
-                            }`}>
+                        <div
+                            role={importStatus.type === 'error' ? 'alert' : 'status'}
+                            aria-live="polite"
+                            className={`mt-4 p-2 rounded text-[10px] flex items-center gap-2 ${importStatus.type === 'success'
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-red-50 text-red-700'
+                                }`}
+                        >
                             {importStatus.type === 'success'
                                 ? <CheckCircle size={12} />
                                 : <AlertCircle size={12} />

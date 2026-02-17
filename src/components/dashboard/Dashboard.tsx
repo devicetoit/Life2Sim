@@ -38,7 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
     }, [results.length]);
 
-    if (!results || results.length === 0) return <div>Loading...</div>;
+    if (!results || results.length === 0) return <div>読み込み中...</div>;
 
     return (
         <div className="h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
@@ -62,7 +62,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest leading-none mb-1.5 mt-1">もしもの時のシミュレーション</span>
                             <select
-                                className="bg-transparent text-sm font-bold text-rose-700 outline-none cursor-pointer pb-1 pr-6"
+                                aria-label="もしもの時の年齢設定"
+                                className="bg-transparent text-sm font-bold text-rose-700 cursor-pointer pb-1 pr-6"
                                 value={data.settings.deathAge || 0}
                                 onChange={(e) => updateData(d => ({
                                     ...d,
@@ -102,11 +103,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     <CloudUpload size={14} className={isSaving ? 'animate-bounce' : ''} />
-                                    {isSaving ? 'Saving...' : '保存'}
+                                    {isSaving ? '保存中...' : '保存'}
                                 </button>
                                 <button
                                     onClick={onLogout}
                                     disabled={isAuthLoading}
+                                    aria-label="ログアウト"
                                     className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-100 transition-all shadow-sm"
                                     title="Logout"
                                 >
@@ -128,7 +130,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </header>
 
             {authError && (
-                <div className="bg-rose-50 border-b border-rose-100 px-8 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top duration-300">
+                <div
+                    role="alert"
+                    aria-live="polite"
+                    className="bg-rose-50 border-b border-rose-100 px-8 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top duration-300"
+                >
                     <div className="p-1 bg-rose-100 rounded-lg">
                         <Save size={14} className="text-rose-600" />
                     </div>

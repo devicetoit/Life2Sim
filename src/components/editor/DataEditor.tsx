@@ -492,8 +492,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                     <div className="bg-white p-4 rounded-lg border shadow-sm space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">購入年齢</label>
+                                <label htmlFor="housing-purchase-age" className="text-xs text-gray-400 block mb-1">購入年齢</label>
                                 <input
+                                    id="housing-purchase-age"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
                                     value={data.housing.purchaseAge}
@@ -504,8 +505,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">購入価格(万円)</label>
+                                <label htmlFor="housing-price" className="text-xs text-gray-400 block mb-1">購入価格(万円)</label>
                                 <input
+                                    id="housing-price"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
                                     value={data.housing.price}
@@ -521,8 +523,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             <h4 className="text-sm font-bold text-gray-700 mb-3">住宅ローンの内容</h4>
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">借入金額(万円)</label>
+                                    <label htmlFor="housing-loan-amount" className="text-xs text-gray-400 block mb-1">借入金額(万円)</label>
                                     <input
+                                        id="housing-loan-amount"
                                         type="number"
                                         className="w-full text-sm border-gray-200 rounded"
                                         value={data.housing.loanAmount}
@@ -533,8 +536,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">返済期間(年)</label>
+                                    <label htmlFor="housing-loan-term" className="text-xs text-gray-400 block mb-1">返済期間(年)</label>
                                     <input
+                                        id="housing-loan-term"
                                         type="number"
                                         className="w-full text-sm border-gray-200 rounded"
                                         value={data.housing.loanTerm}
@@ -625,8 +629,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
                             <div className="grid grid-cols-2 gap-4 mt-4">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">ローン保険(団信)の種類</label>
+                                    <label htmlFor="housing-danshin-type" className="text-xs text-gray-400 block mb-1">ローン保険(団信)の種類</label>
                                     <input
+                                        id="housing-danshin-type"
                                         className="w-full text-sm border-gray-200 rounded"
                                         value={data.housing.danshinType || ''}
                                         onChange={(e) => updateData(d => ({
@@ -637,8 +642,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">保険による金利上乗せ(%)</label>
+                                    <label htmlFor="housing-danshin-rate" className="text-xs text-gray-400 block mb-1">保険による金利上乗せ(%)</label>
                                     <input
+                                        id="housing-danshin-rate"
                                         type="number"
                                         step="0.01"
                                         className="w-full text-sm border-gray-200 rounded"
@@ -653,8 +659,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
                             <div className="grid grid-cols-2 gap-4 mt-4">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">全疾病保障種類</label>
+                                    <label htmlFor="housing-all-disease-type" className="text-xs text-gray-400 block mb-1">全疾病保障種類</label>
                                     <input
+                                        id="housing-all-disease-type"
                                         className="w-full text-sm border-gray-200 rounded"
                                         value={data.housing.allDiseaseType || ''}
                                         onChange={(e) => updateData(d => ({
@@ -665,8 +672,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">病気保障の追加利率(%)</label>
+                                    <label htmlFor="housing-all-disease-rate" className="text-xs text-gray-400 block mb-1">病気保障の追加利率(%)</label>
                                     <input
+                                        id="housing-all-disease-rate"
                                         type="number"
                                         step="0.01"
                                         className="w-full text-sm border-gray-200 rounded"
@@ -682,8 +690,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
                         <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">頭金(万円)</label>
+                                <label htmlFor="housing-down-payment" className="text-xs text-gray-400 block mb-1">頭金(万円)</label>
                                 <input
+                                    id="housing-down-payment"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
                                     value={data.housing.downPayment}
@@ -694,8 +703,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">購入前家賃(月/万)</label>
+                                <label htmlFor="housing-rental-cost" className="text-xs text-gray-400 block mb-1">購入前家賃(月/万)</label>
                                 <input
+                                    id="housing-rental-cost"
                                     type="number"
                                     step="0.1"
                                     className="w-full text-sm border-gray-200 rounded"
@@ -707,8 +717,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">年間維持費(万)</label>
+                                <label htmlFor="housing-maintenance-cost" className="text-xs text-gray-400 block mb-1">年間維持費(万)</label>
                                 <input
+                                    id="housing-maintenance-cost"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
                                     value={data.housing.maintenanceCost}
@@ -744,8 +755,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-4">
                                             <div className="w-24">
-                                                <label className="text-[10px] text-gray-400 uppercase">開始年齢</label>
+                                                <label htmlFor={`living-step-start-${step.id}`} className="text-[10px] text-gray-400 uppercase">開始年齢</label>
                                                 <input
+                                                    id={`living-step-start-${step.id}`}
                                                     type="number"
                                                     className="w-full text-sm border-gray-200 rounded"
                                                     value={step.startAge}
@@ -771,28 +783,28 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
                                     <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                         <div>
-                                            <label className="text-[10px] text-gray-400">食費</label>
-                                            <input type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.food || 0} onChange={(e) => updateBreakdown('food', Number(e.target.value))} />
+                                            <label htmlFor={`living-step-food-${step.id}`} className="text-[10px] text-gray-400">食費</label>
+                                            <input id={`living-step-food-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.food || 0} onChange={(e) => updateBreakdown('food', Number(e.target.value))} />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] text-gray-400">通信費</label>
-                                            <input type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.communication || 0} onChange={(e) => updateBreakdown('communication', Number(e.target.value))} />
+                                            <label htmlFor={`living-step-communication-${step.id}`} className="text-[10px] text-gray-400">通信費</label>
+                                            <input id={`living-step-communication-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.communication || 0} onChange={(e) => updateBreakdown('communication', Number(e.target.value))} />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] text-gray-400">日用品</label>
-                                            <input type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.dailyGoods || 0} onChange={(e) => updateBreakdown('dailyGoods', Number(e.target.value))} />
+                                            <label htmlFor={`living-step-daily-goods-${step.id}`} className="text-[10px] text-gray-400">日用品</label>
+                                            <input id={`living-step-daily-goods-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.dailyGoods || 0} onChange={(e) => updateBreakdown('dailyGoods', Number(e.target.value))} />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] text-gray-400">水道光熱費</label>
-                                            <input type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.utilities || 0} onChange={(e) => updateBreakdown('utilities', Number(e.target.value))} />
+                                            <label htmlFor={`living-step-utilities-${step.id}`} className="text-[10px] text-gray-400">水道光熱費</label>
+                                            <input id={`living-step-utilities-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.utilities || 0} onChange={(e) => updateBreakdown('utilities', Number(e.target.value))} />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] text-gray-400">趣味・娯楽</label>
-                                            <input type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.hobby || 0} onChange={(e) => updateBreakdown('hobby', Number(e.target.value))} />
+                                            <label htmlFor={`living-step-hobby-${step.id}`} className="text-[10px] text-gray-400">趣味・娯楽</label>
+                                            <input id={`living-step-hobby-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.hobby || 0} onChange={(e) => updateBreakdown('hobby', Number(e.target.value))} />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] text-gray-400">その他</label>
-                                            <input type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.other || 0} onChange={(e) => updateBreakdown('other', Number(e.target.value))} />
+                                            <label htmlFor={`living-step-other-${step.id}`} className="text-[10px] text-gray-400">その他</label>
+                                            <input id={`living-step-other-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.other || 0} onChange={(e) => updateBreakdown('other', Number(e.target.value))} />
                                         </div>
                                     </div>
                                 </div>
@@ -842,8 +854,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 </div>
                                 <div className="grid grid-cols-4 gap-2 text-sm">
                                     <div>
-                                        <label className="text-xs text-gray-400">金額(万円)</label>
+                                        <label htmlFor={`event-amount-${event.id}`} className="text-xs text-gray-400">金額(万円)</label>
                                         <input
+                                            id={`event-amount-${event.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
                                             value={event.amount}
@@ -854,8 +867,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400">開始年齢</label>
+                                        <label htmlFor={`event-start-age-${event.id}`} className="text-xs text-gray-400">開始年齢</label>
                                         <input
+                                            id={`event-start-age-${event.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
                                             value={event.startAge}
@@ -866,8 +880,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400">タイプ</label>
+                                        <label htmlFor={`event-type-${event.id}`} className="text-xs text-gray-400">タイプ</label>
                                         <select
+                                            id={`event-type-${event.id}`}
                                             className="w-full border-gray-200 rounded mt-1 text-xs"
                                             value={event.type}
                                             onChange={(e) => updateData(d => ({
@@ -881,8 +896,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     </div>
                                     {event.type === 'periodic' && (
                                         <div>
-                                            <label className="text-xs text-gray-400">間隔(年)</label>
+                                            <label htmlFor={`event-interval-${event.id}`} className="text-xs text-gray-400">間隔(年)</label>
                                             <input
+                                                id={`event-interval-${event.id}`}
                                                 type="number"
                                                 className="w-full border-gray-200 rounded mt-1"
                                                 value={event.interval || 1}
@@ -929,8 +945,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 </div>
                                 <div className="grid grid-cols-4 gap-2 text-sm">
                                     <div>
-                                        <label className="text-xs text-gray-400">対象資産</label>
+                                        <label htmlFor={`contrib-asset-${contrib.id}`} className="text-xs text-gray-400">対象資産</label>
                                         <select
+                                            id={`contrib-asset-${contrib.id}`}
                                             className="w-full border-gray-200 rounded mt-1 text-xs"
                                             value={contrib.assetId}
                                             onChange={(e) => updateData(d => ({
@@ -944,8 +961,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400">金額(万円)</label>
+                                        <label htmlFor={`contrib-amount-${contrib.id}`} className="text-xs text-gray-400">金額(万円)</label>
                                         <input
+                                            id={`contrib-amount-${contrib.id}`}
                                             type="number"
                                             step="0.1"
                                             className="w-full border-gray-200 rounded mt-1"
@@ -957,8 +975,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400">開始年齢</label>
+                                        <label htmlFor={`contrib-start-age-${contrib.id}`} className="text-xs text-gray-400">開始年齢</label>
                                         <input
+                                            id={`contrib-start-age-${contrib.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
                                             value={contrib.startAge}
@@ -969,8 +988,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-400">終了年齢</label>
+                                        <label htmlFor={`contrib-end-age-${contrib.id}`} className="text-xs text-gray-400">終了年齢</label>
                                         <input
+                                            id={`contrib-end-age-${contrib.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
                                             value={contrib.endAge}
@@ -1002,8 +1022,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <p className="font-medium text-gray-800">{child?.name || '不明'}</p>
                                     </div>
                                     <div className="w-32">
-                                        <label className="text-xs text-gray-400">累計教育費(万円)</label>
+                                        <label htmlFor={`education-total-${plan.childId}`} className="text-xs text-gray-400">累計教育費(万円)</label>
                                         <input
+                                            id={`education-total-${plan.childId}`}
                                             type="number"
                                             className="w-full text-sm border-gray-200 rounded mt-1"
                                             value={plan.totalAmountOverride || 0}
@@ -1053,8 +1074,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 text-sm">
                                         <div>
-                                            <label className="text-xs text-gray-400">月額(万円)</label>
+                                            <label htmlFor={`personal-cost-amount-${cost.id}`} className="text-xs text-gray-400">月額(万円)</label>
                                             <input
+                                                id={`personal-cost-amount-${cost.id}`}
                                                 type="number"
                                                 step="0.1"
                                                 className="w-full border-gray-200 rounded mt-1"
@@ -1066,8 +1088,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-gray-400">開始年齢</label>
+                                            <label htmlFor={`personal-cost-start-age-${cost.id}`} className="text-xs text-gray-400">開始年齢</label>
                                             <input
+                                                id={`personal-cost-start-age-${cost.id}`}
                                                 type="number"
                                                 className="w-full border-gray-200 rounded mt-1"
                                                 value={cost.startAge || 0}
@@ -1078,8 +1101,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-gray-400">終了年齢</label>
+                                            <label htmlFor={`personal-cost-end-age-${cost.id}`} className="text-xs text-gray-400">終了年齢</label>
                                             <input
+                                                id={`personal-cost-end-age-${cost.id}`}
                                                 type="number"
                                                 className="w-full border-gray-200 rounded mt-1"
                                                 value={cost.endAge || 99}
@@ -1105,8 +1129,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                     <div className="bg-white p-4 rounded-lg border shadow-sm space-y-4">
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">基準年</label>
+                                <label htmlFor="settings-base-year" className="text-xs text-gray-400 block mb-1">基準年</label>
                                 <input
+                                    id="settings-base-year"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
                                     value={data.settings.baseYear}
@@ -1117,8 +1142,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">開始年齢</label>
+                                <label htmlFor="settings-start-age" className="text-xs text-gray-400 block mb-1">開始年齢</label>
                                 <input
+                                    id="settings-start-age"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
                                     value={data.settings.startAge}
@@ -1129,8 +1155,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">終了年齢</label>
+                                <label htmlFor="settings-end-age" className="text-xs text-gray-400 block mb-1">終了年齢</label>
                                 <input
+                                    id="settings-end-age"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
                                     value={data.settings.endAge}
@@ -1145,8 +1172,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             <label className="text-xs text-gray-400 block mb-2">インフレ率設定</label>
                             <div className="grid grid-cols-3 gap-2">
                                 <div>
-                                    <label className="text-xs text-gray-500">生活費(%)</label>
+                                    <label htmlFor="settings-rate-living" className="text-xs text-gray-500">生活費(%)</label>
                                     <input
+                                        id="settings-rate-living"
                                         type="number"
                                         step="0.1"
                                         className="w-full text-sm border-gray-200 rounded mt-1"
@@ -1158,8 +1186,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-500">教育費(%)</label>
+                                    <label htmlFor="settings-rate-education" className="text-xs text-gray-500">教育費(%)</label>
                                     <input
+                                        id="settings-rate-education"
                                         type="number"
                                         step="0.1"
                                         className="w-full text-sm border-gray-200 rounded mt-1"
@@ -1171,8 +1200,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-500">その他(%)</label>
+                                    <label htmlFor="settings-rate-other" className="text-xs text-gray-500">その他(%)</label>
                                     <input
+                                        id="settings-rate-other"
                                         type="number"
                                         step="0.1"
                                         className="w-full text-sm border-gray-200 rounded mt-1"

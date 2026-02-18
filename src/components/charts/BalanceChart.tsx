@@ -1,6 +1,7 @@
 import React from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { AnnualResult } from '../../types';
+import { formatAmount } from '../../lib/format';
 
 interface Props {
     results: AnnualResult[];
@@ -42,7 +43,7 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="age" />
                     <YAxis />
-                    <Tooltip formatter={(value: number) => value.toFixed(1).toLocaleString() + '万円'} />
+                    <Tooltip formatter={(value: number) => `${formatAmount(value)}万円`} />
                     <Legend />
                     {expenseConfigs.map(cfg => (
                         <Bar key={cfg.key} dataKey={cfg.key} name={cfg.name} stackId="a" fill={cfg.color} />

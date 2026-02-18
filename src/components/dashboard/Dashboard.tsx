@@ -38,7 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
     }, [results.length]);
 
-    if (!results || results.length === 0) return <div>読み込み中...</div>;
+    if (!results || results.length === 0) return <div>読み込み中…</div>;
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden">
@@ -83,7 +83,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/50">
                         <button
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${isSidebarOpen ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-200 shadow-sm'}`}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 ${isSidebarOpen ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-200 shadow-sm'}`}
                         >
                             <Save size={14} />
                             {isSidebarOpen ? '設定を隠す' : '設定を表示'}
@@ -100,16 +100,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <button
                                     onClick={onSave}
                                     disabled={isSaving || isSyncing}
-                                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 transition-colors transition-transform flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     <CloudUpload size={14} className={isSaving ? 'animate-bounce' : ''} />
-                                    {isSaving ? '保存中...' : '保存'}
+                                    {isSaving ? '保存中…' : '保存'}
                                 </button>
                                 <button
                                     onClick={onLogout}
                                     disabled={isAuthLoading}
                                     aria-label="ログアウト"
-                                    className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-100 transition-all shadow-sm"
+                                    className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-100 transition-colors shadow-sm"
                                     title="Logout"
                                 >
                                     <LogOut size={16} />
@@ -119,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <button
                                 onClick={onLogin}
                                 disabled={isAuthLoading}
-                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition-all flex items-center gap-2 shadow-sm hover:translate-y-[-1px]"
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition-colors transition-transform flex items-center gap-2 shadow-sm hover:translate-y-[-1px]"
                             >
                                 <LogIn size={16} className="text-indigo-500" />
                                 クラウド同期
@@ -143,7 +143,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
 
             <main className="flex-1 min-h-0 flex flex-row relative">
-                <div className={`flex-1 p-8 bg-slate-50/30 scroll-smooth transition-all duration-300`}>
+                <div className={`flex-1 p-8 bg-slate-50/30 scroll-smooth`}>
                     <div className="max-w-[1400px] mx-auto">
                         <SummaryCards results={results} />
 
@@ -177,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
 
                 {/* Right Sidebar Editor */}
-                <aside className={`${isSidebarOpen ? 'w-[400px] translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0'} transition-all duration-300 ease-in-out border-l border-slate-200 bg-white overflow-hidden flex flex-col`}>
+                <aside className={`${isSidebarOpen ? 'w-[400px] translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0'} transition-[width,opacity,transform] duration-300 ease-in-out border-l border-slate-200 bg-white overflow-hidden flex flex-col`}>
                     <div className="w-[400px] h-full overflow-y-auto">
                         <DataEditor isSidebar={true} />
                     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { AnnualResult, Asset } from '../../types';
+import { formatAmount } from '../../lib/format';
 
 interface Props {
     results: AnnualResult[];
@@ -46,7 +47,7 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="age" label={{ value: '年齢', position: 'insideBottomRight', offset: -5 }} />
                     <YAxis label={{ value: '万円', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value: number) => value.toFixed(1).toLocaleString() + '万円'} />
+                    <Tooltip formatter={(value: number) => `${formatAmount(value)}万円`} />
                     <Legend />
                     {keys.map((key, index) => (
                         <Area

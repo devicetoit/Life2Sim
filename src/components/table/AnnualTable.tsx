@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper } from '@tanstack/react-table';
 import { AnnualResult } from '../../types';
 import { Download } from 'lucide-react';
+import { formatAmount } from '../../lib/format';
 
 interface Props {
     results: AnnualResult[];
@@ -21,63 +22,63 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
         columnHelper.group({
             header: '本人の収入',
             columns: [
-                columnHelper.accessor('income.self.salary', { header: 'お給料', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.self.publicPension', { header: '年金など', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.self.privatePension', { header: '個人年金等', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.self.individualPension', { header: 'iDeCo等', cell: i => i.getValue().toFixed(1).toLocaleString() }),
+                columnHelper.accessor('income.self.salary', { header: 'お給料', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.self.publicPension', { header: '年金など', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.self.privatePension', { header: '個人年金等', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.self.individualPension', { header: 'iDeCo等', cell: i => formatAmount(i.getValue()) }),
             ]
         }),
         columnHelper.group({
             header: '家族の収入',
             columns: [
-                columnHelper.accessor('income.spouse.salary', { header: 'お給料', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.spouse.publicPension', { header: '年金など', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.spouse.privatePension', { header: '個人年金等', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.spouse.individualPension', { header: 'iDeCo等', cell: i => i.getValue().toFixed(1).toLocaleString() }),
+                columnHelper.accessor('income.spouse.salary', { header: 'お給料', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.spouse.publicPension', { header: '年金など', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.spouse.privatePension', { header: '個人年金等', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.spouse.individualPension', { header: 'iDeCo等', cell: i => formatAmount(i.getValue()) }),
             ]
         }),
         columnHelper.group({
             header: 'その他',
             columns: [
-                columnHelper.accessor('income.assetWithdrawal', { header: '貯金の切崩', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.childAllowance', { header: '児童手当', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('income.total', { header: '年収合計', cell: i => <span className="font-bold">{i.getValue().toFixed(1).toLocaleString()}</span> }),
+                columnHelper.accessor('income.assetWithdrawal', { header: '貯金の切崩', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.childAllowance', { header: '児童手当', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.total', { header: '年収合計', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
             ]
         }),
         columnHelper.group({
             header: '使う予定のお金',
             columns: [
-                columnHelper.accessor('expense.living', { header: '基本生活費', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.housing', { header: '火災保険等', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.education', { header: '学費など', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.futurePlan', { header: '車の買替等', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.selfSpecific', { header: '趣味・他', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.spouseSpecific', { header: '趣味・他', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.familySpecific', { header: '家族関連', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.repayment', { header: '家ローン', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.investment', { header: '将来の積立', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.insurance', { header: '保険料', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.tax', { header: '税金・社保', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('expense.total', { header: '支出合計', cell: i => <span className="font-bold">{i.getValue().toFixed(1).toLocaleString()}</span> }),
+                columnHelper.accessor('expense.living', { header: '基本生活費', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.housing', { header: '火災保険等', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.education', { header: '学費など', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.futurePlan', { header: '車の買替等', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.selfSpecific', { header: '趣味・他', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.spouseSpecific', { header: '趣味・他', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.familySpecific', { header: '家族関連', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.repayment', { header: '家ローン', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.investment', { header: '将来の積立', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.insurance', { header: '保険料', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.tax', { header: '税金・社保', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('expense.total', { header: '支出合計', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
             ]
         }),
         columnHelper.group({
             header: '毎年の収支',
             columns: [
-                columnHelper.accessor('balance', { header: '年間の残金', cell: i => <span className={i.getValue() < 0 ? 'text-red-500' : ''}>{i.getValue().toFixed(1).toLocaleString()}</span> }),
-                columnHelper.accessor('irregularExpense', { header: '不定期な出費', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('netSavings', { header: '実質の貯蓄', cell: i => <span className="font-bold">{i.getValue().toFixed(1).toLocaleString()}</span> }),
-                columnHelper.accessor('educationFundMaturity', { header: '満期保険等', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('surrenderValue', { header: '保険解約金', cell: i => i.getValue().toFixed(1).toLocaleString() }),
+                columnHelper.accessor('balance', { header: '年間の残金', cell: i => <span className={i.getValue() < 0 ? 'text-red-500' : ''}>{formatAmount(i.getValue())}</span> }),
+                columnHelper.accessor('irregularExpense', { header: '不定期な出費', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('netSavings', { header: '実質の貯蓄', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
+                columnHelper.accessor('educationFundMaturity', { header: '満期保険等', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('surrenderValue', { header: '保険解約金', cell: i => formatAmount(i.getValue()) }),
             ]
         }),
         columnHelper.group({
             header: '貯金の合計',
             columns: [
-                columnHelper.accessor('assets.shortTerm', { header: 'ふだん使い', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('assets.mediumTerm', { header: '予備のお金', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('assets.longTerm', { header: '運用の資金', cell: i => i.getValue().toFixed(1).toLocaleString() }),
-                columnHelper.accessor('assets.total', { header: 'その年の残高', cell: i => <span className="font-bold text-indigo-600">{i.getValue().toFixed(1).toLocaleString()}</span> }),
+                columnHelper.accessor('assets.shortTerm', { header: 'ふだん使い', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('assets.mediumTerm', { header: '予備のお金', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('assets.longTerm', { header: '運用の資金', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('assets.total', { header: 'その年の残高', cell: i => <span className="font-bold text-indigo-600">{formatAmount(i.getValue())}</span> }),
             ]
         }),
     ], [columnHelper]);
@@ -182,3 +183,4 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
         </div>
     );
 };
+

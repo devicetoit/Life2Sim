@@ -109,7 +109,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-8 right-8 p-4 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all flex items-center gap-3 z-50 hover:translate-y-[-2px] active:translate-y-[0px]"
+                className="fixed bottom-8 right-8 p-4 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200 hover:bg-slate-800 transition-colors transition-transform flex items-center gap-3 z-50 hover:translate-y-[-2px] active:translate-y-[0px]"
             >
                 <Save size={20} className="text-indigo-400" />
                 <span className="font-bold text-sm tracking-tight text-white/90">データをいじる・保存・読込</span>
@@ -137,7 +137,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-10">
                 {/* Export Section */}
-                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60 transition-all hover:border-indigo-100">
+                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60 transition-colors hover:border-indigo-100">
                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-5">保存と書き出し</h3>
                     <div className="flex gap-4">
                         <button onClick={exportJSON} className="flex-1 flex items-center justify-center gap-2 p-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors">
@@ -188,6 +188,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <input
                                                 className="w-full border-none p-0 bg-transparent"
                                                 aria-label="家族メンバー名"
+                                                name={`person-name-${person.id}`}
+                                                autoComplete="name"
                                                 value={person.name}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -200,6 +202,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 type="number"
                                                 className="w-full border-none p-0 bg-transparent"
                                                 aria-label="家族メンバーの生年"
+                                                name={`person-birth-year-${person.id}`}
+                                                autoComplete="bday-year"
                                                 value={person.birthYear}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -302,6 +306,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 <input
                                                     className="w-full border-none p-0 bg-transparent text-sm"
                                                     aria-label="収入名称"
+                                                    name={`income-name-${inc.id}`}
+                                                    autoComplete="off"
                                                     value={inc.name}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -329,6 +335,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     type="number"
                                                     className="w-full border-none p-0 bg-transparent text-right"
                                                     aria-label="収入金額"
+                                                    name={`income-amount-${inc.id}`}
+                                                    autoComplete="off"
                                                     value={inc.amount}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -341,6 +349,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     type="number"
                                                     className="w-full border-none p-0 bg-transparent text-right"
                                                     aria-label="収入開始年齢"
+                                                    name={`income-start-age-${inc.id}`}
+                                                    autoComplete="off"
                                                     value={inc.startAge}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -353,6 +363,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     type="number"
                                                     className="w-full border-none p-0 bg-transparent text-right"
                                                     aria-label="収入終了年齢"
+                                                    name={`income-end-age-${inc.id}`}
+                                                    autoComplete="off"
                                                     value={inc.endAge}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -418,6 +430,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <input
                                                 className="w-full border-none p-0 bg-transparent font-medium"
                                                 aria-label="資産名称"
+                                                name={`asset-name-${asset.id}`}
+                                                autoComplete="off"
                                                 value={asset.name}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -445,6 +459,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 type="number"
                                                 className="w-full border-none p-0 bg-transparent text-right"
                                                 aria-label="資産現在額"
+                                                name={`asset-initial-amount-${asset.id}`}
+                                                autoComplete="off"
                                                 value={asset.initialAmount}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -459,6 +475,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     step="0.1"
                                                     className="w-12 border-none p-0 bg-transparent text-right"
                                                     aria-label="資産の年利率"
+                                                    name={`asset-rate-${asset.id}`}
+                                                    autoComplete="off"
                                                     value={asset.rate}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -497,6 +515,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     id="housing-purchase-age"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="housing-purchase-age"
+                                    autoComplete="off"
                                     value={data.housing.purchaseAge}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -510,6 +530,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     id="housing-price"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="housing-price"
+                                    autoComplete="off"
                                     value={data.housing.price}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -528,6 +550,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         id="housing-loan-amount"
                                         type="number"
                                         className="w-full text-sm border-gray-200 rounded"
+                                        name="housing-loan-amount"
+                                        autoComplete="off"
                                         value={data.housing.loanAmount}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -541,6 +565,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         id="housing-loan-term"
                                         type="number"
                                         className="w-full text-sm border-gray-200 rounded"
+                                        name="housing-loan-term"
+                                        autoComplete="off"
                                         value={data.housing.loanTerm}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -581,6 +607,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     <input
                                                         type="number"
                                                         className="w-full border-gray-200 rounded p-1"
+                                                        name={`housing-interest-years-${idx}`}
+                                                        autoComplete="off"
                                                         value={period.years}
                                                         onChange={(e) => updateData(d => ({
                                                             ...d,
@@ -596,6 +624,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                         type="number"
                                                         step="0.001"
                                                         className="w-full border-gray-200 rounded p-1"
+                                                        name={`housing-interest-rate-${idx}`}
+                                                        autoComplete="off"
                                                         value={period.rate}
                                                         onChange={(e) => updateData(d => ({
                                                             ...d,
@@ -633,6 +663,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <input
                                         id="housing-danshin-type"
                                         className="w-full text-sm border-gray-200 rounded"
+                                        name="housing-danshin-type"
+                                        autoComplete="off"
                                         value={data.housing.danshinType || ''}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -648,6 +680,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         type="number"
                                         step="0.01"
                                         className="w-full text-sm border-gray-200 rounded"
+                                        name="housing-danshin-rate"
+                                        autoComplete="off"
                                         value={data.housing.danshinRate || 0}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -663,6 +697,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <input
                                         id="housing-all-disease-type"
                                         className="w-full text-sm border-gray-200 rounded"
+                                        name="housing-all-disease-type"
+                                        autoComplete="off"
                                         value={data.housing.allDiseaseType || ''}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -678,6 +714,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         type="number"
                                         step="0.01"
                                         className="w-full text-sm border-gray-200 rounded"
+                                        name="housing-all-disease-rate"
+                                        autoComplete="off"
                                         value={data.housing.allDiseaseRate || 0}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -695,6 +733,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     id="housing-down-payment"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="housing-down-payment"
+                                    autoComplete="off"
                                     value={data.housing.downPayment}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -709,6 +749,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     type="number"
                                     step="0.1"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="housing-rental-cost"
+                                    autoComplete="off"
                                     value={data.housing.rentalCost}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -722,6 +764,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     id="housing-maintenance-cost"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="housing-maintenance-cost"
+                                    autoComplete="off"
                                     value={data.housing.maintenanceCost}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -760,6 +804,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     id={`living-step-start-${step.id}`}
                                                     type="number"
                                                     className="w-full text-sm border-gray-200 rounded"
+                                                    name={`living-step-start-${step.id}`}
+                                                    autoComplete="off"
                                                     value={step.startAge}
                                                     onChange={(e) => updateData(d => ({
                                                         ...d,
@@ -784,27 +830,27 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                         <div>
                                             <label htmlFor={`living-step-food-${step.id}`} className="text-[10px] text-gray-400">食費</label>
-                                            <input id={`living-step-food-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.food || 0} onChange={(e) => updateBreakdown('food', Number(e.target.value))} />
+                                            <input id={`living-step-food-${step.id}`} name={`living-step-food-${step.id}`} autoComplete="off" type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.food || 0} onChange={(e) => updateBreakdown('food', Number(e.target.value))} />
                                         </div>
                                         <div>
                                             <label htmlFor={`living-step-communication-${step.id}`} className="text-[10px] text-gray-400">通信費</label>
-                                            <input id={`living-step-communication-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.communication || 0} onChange={(e) => updateBreakdown('communication', Number(e.target.value))} />
+                                            <input id={`living-step-communication-${step.id}`} name={`living-step-communication-${step.id}`} autoComplete="off" type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.communication || 0} onChange={(e) => updateBreakdown('communication', Number(e.target.value))} />
                                         </div>
                                         <div>
                                             <label htmlFor={`living-step-daily-goods-${step.id}`} className="text-[10px] text-gray-400">日用品</label>
-                                            <input id={`living-step-daily-goods-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.dailyGoods || 0} onChange={(e) => updateBreakdown('dailyGoods', Number(e.target.value))} />
+                                            <input id={`living-step-daily-goods-${step.id}`} name={`living-step-daily-goods-${step.id}`} autoComplete="off" type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.dailyGoods || 0} onChange={(e) => updateBreakdown('dailyGoods', Number(e.target.value))} />
                                         </div>
                                         <div>
                                             <label htmlFor={`living-step-utilities-${step.id}`} className="text-[10px] text-gray-400">水道光熱費</label>
-                                            <input id={`living-step-utilities-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.utilities || 0} onChange={(e) => updateBreakdown('utilities', Number(e.target.value))} />
+                                            <input id={`living-step-utilities-${step.id}`} name={`living-step-utilities-${step.id}`} autoComplete="off" type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.utilities || 0} onChange={(e) => updateBreakdown('utilities', Number(e.target.value))} />
                                         </div>
                                         <div>
                                             <label htmlFor={`living-step-hobby-${step.id}`} className="text-[10px] text-gray-400">趣味・娯楽</label>
-                                            <input id={`living-step-hobby-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.hobby || 0} onChange={(e) => updateBreakdown('hobby', Number(e.target.value))} />
+                                            <input id={`living-step-hobby-${step.id}`} name={`living-step-hobby-${step.id}`} autoComplete="off" type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.hobby || 0} onChange={(e) => updateBreakdown('hobby', Number(e.target.value))} />
                                         </div>
                                         <div>
                                             <label htmlFor={`living-step-other-${step.id}`} className="text-[10px] text-gray-400">その他</label>
-                                            <input id={`living-step-other-${step.id}`} type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.other || 0} onChange={(e) => updateBreakdown('other', Number(e.target.value))} />
+                                            <input id={`living-step-other-${step.id}`} name={`living-step-other-${step.id}`} autoComplete="off" type="number" step="0.1" className="w-full text-xs border-gray-200 rounded p-1" value={step.breakdown?.other || 0} onChange={(e) => updateBreakdown('other', Number(e.target.value))} />
                                         </div>
                                     </div>
                                 </div>
@@ -838,6 +884,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <input
                                         className="font-medium text-gray-800 border-none p-0 flex-1"
                                         aria-label="イベント名"
+                                        name={`event-name-${event.id}`}
+                                        autoComplete="off"
                                         value={event.name}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -859,6 +907,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             id={`event-amount-${event.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
+                                            name={`event-amount-${event.id}`}
+                                            autoComplete="off"
                                             value={event.amount}
                                             onChange={(e) => updateData(d => ({
                                                 ...d,
@@ -872,6 +922,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             id={`event-start-age-${event.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
+                                            name={`event-start-age-${event.id}`}
+                                            autoComplete="off"
                                             value={event.startAge}
                                             onChange={(e) => updateData(d => ({
                                                 ...d,
@@ -901,6 +953,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 id={`event-interval-${event.id}`}
                                                 type="number"
                                                 className="w-full border-gray-200 rounded mt-1"
+                                                name={`event-interval-${event.id}`}
+                                                autoComplete="off"
                                                 value={event.interval || 1}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -929,6 +983,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <input
                                         className="font-medium text-gray-800 border-none p-0 flex-1"
                                         aria-label="積立設定名"
+                                        name={`contrib-name-${contrib.id}`}
+                                        autoComplete="off"
                                         value={contrib.name}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -967,6 +1023,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             type="number"
                                             step="0.1"
                                             className="w-full border-gray-200 rounded mt-1"
+                                            name={`contrib-amount-${contrib.id}`}
+                                            autoComplete="off"
                                             value={contrib.amount}
                                             onChange={(e) => updateData(d => ({
                                                 ...d,
@@ -980,6 +1038,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             id={`contrib-start-age-${contrib.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
+                                            name={`contrib-start-age-${contrib.id}`}
+                                            autoComplete="off"
                                             value={contrib.startAge}
                                             onChange={(e) => updateData(d => ({
                                                 ...d,
@@ -993,6 +1053,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             id={`contrib-end-age-${contrib.id}`}
                                             type="number"
                                             className="w-full border-gray-200 rounded mt-1"
+                                            name={`contrib-end-age-${contrib.id}`}
+                                            autoComplete="off"
                                             value={contrib.endAge}
                                             onChange={(e) => updateData(d => ({
                                                 ...d,
@@ -1027,6 +1089,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             id={`education-total-${plan.childId}`}
                                             type="number"
                                             className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name={`education-total-${plan.childId}`}
+                                            autoComplete="off"
                                             value={plan.totalAmountOverride || 0}
                                             onChange={(e) => updateData(d => ({
                                                 ...d,
@@ -1057,6 +1121,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <input
                                                 className="font-medium text-gray-800 border-none p-0"
                                                 aria-label="個人固定費名"
+                                                name={`personal-cost-name-${cost.id}`}
+                                                autoComplete="off"
                                                 value={cost.name}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -1080,6 +1146,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 type="number"
                                                 step="0.1"
                                                 className="w-full border-gray-200 rounded mt-1"
+                                                name={`personal-cost-amount-${cost.id}`}
+                                                autoComplete="off"
                                                 value={cost.amount}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -1093,6 +1161,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 id={`personal-cost-start-age-${cost.id}`}
                                                 type="number"
                                                 className="w-full border-gray-200 rounded mt-1"
+                                                name={`personal-cost-start-age-${cost.id}`}
+                                                autoComplete="off"
                                                 value={cost.startAge || 0}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -1106,6 +1176,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 id={`personal-cost-end-age-${cost.id}`}
                                                 type="number"
                                                 className="w-full border-gray-200 rounded mt-1"
+                                                name={`personal-cost-end-age-${cost.id}`}
+                                                autoComplete="off"
                                                 value={cost.endAge || 99}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
@@ -1134,6 +1206,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     id="settings-base-year"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="settings-base-year"
+                                    autoComplete="off"
                                     value={data.settings.baseYear}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -1147,6 +1221,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     id="settings-start-age"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="settings-start-age"
+                                    autoComplete="off"
                                     value={data.settings.startAge}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -1160,6 +1236,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     id="settings-end-age"
                                     type="number"
                                     className="w-full text-sm border-gray-200 rounded"
+                                    name="settings-end-age"
+                                    autoComplete="off"
                                     value={data.settings.endAge}
                                     onChange={(e) => updateData(d => ({
                                         ...d,
@@ -1178,6 +1256,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         type="number"
                                         step="0.1"
                                         className="w-full text-sm border-gray-200 rounded mt-1"
+                                        name="settings-rate-living"
+                                        autoComplete="off"
                                         value={data.settings.rates.living}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -1192,6 +1272,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         type="number"
                                         step="0.1"
                                         className="w-full text-sm border-gray-200 rounded mt-1"
+                                        name="settings-rate-education"
+                                        autoComplete="off"
                                         value={data.settings.rates.education}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -1206,6 +1288,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         type="number"
                                         step="0.1"
                                         className="w-full text-sm border-gray-200 rounded mt-1"
+                                        name="settings-rate-other"
+                                        autoComplete="off"
                                         value={data.settings.rates.other}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
@@ -1225,6 +1309,16 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
+                        onClick={() => fileInputRef.current?.click()}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                fileInputRef.current?.click();
+                            }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="JSONファイルを選択またはドロップ"
                         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging
                             ? 'border-indigo-500 bg-indigo-50'
                             : 'border-gray-200 hover:border-gray-300'
@@ -1235,6 +1329,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                         <input
                             ref={fileInputRef}
                             type="file"
+                            name="config-upload"
+                            autoComplete="off"
                             accept=".json"
                             onChange={handleFileSelect}
                             className="hidden"

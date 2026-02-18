@@ -186,7 +186,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <tr key={person.id} className="hover:bg-gray-50">
                                         <td className="px-3 py-2">
                                             <input
-                                                className="w-full border-none p-0 focus:ring-0 bg-transparent"
+                                                className="w-full border-none p-0 bg-transparent"
                                                 aria-label="家族メンバー名"
                                                 value={person.name}
                                                 onChange={(e) => updateData(d => ({
@@ -198,7 +198,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <input
                                                 type="number"
-                                                className="w-full border-none p-0 focus:ring-0 bg-transparent"
+                                                className="w-full border-none p-0 bg-transparent"
                                                 aria-label="家族メンバーの生年"
                                                 value={person.birthYear}
                                                 onChange={(e) => updateData(d => ({
@@ -209,7 +209,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         </td>
                                         <td className="px-3 py-2">
                                             <select
-                                                className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                className="w-full border-none p-0 bg-transparent text-xs"
                                                 aria-label="家族メンバーの続柄"
                                                 value={person.relation}
                                                 onChange={(e) => updateData(d => ({
@@ -285,7 +285,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <tr key={inc.id} className="hover:bg-gray-50">
                                             <td className="px-2 py-1">
                                                 <select
-                                                    className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                    className="w-full border-none p-0 bg-transparent text-xs"
                                                     aria-label="収入対象者"
                                                     value={inc.personId}
                                                     onChange={(e) => updateData(d => ({
@@ -300,7 +300,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             </td>
                                             <td className="px-2 py-1">
                                                 <input
-                                                    className="w-full border-none p-0 focus:ring-0 bg-transparent text-sm"
+                                                    className="w-full border-none p-0 bg-transparent text-sm"
                                                     aria-label="収入名称"
                                                     value={inc.name}
                                                     onChange={(e) => updateData(d => ({
@@ -311,7 +311,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             </td>
                                             <td className="px-2 py-1">
                                                 <select
-                                                    className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                    className="w-full border-none p-0 bg-transparent text-xs"
                                                     aria-label="収入カテゴリ"
                                                     value={inc.category}
                                                     onChange={(e) => updateData(d => ({
@@ -327,7 +327,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <td className="px-2 py-1">
                                                 <input
                                                     type="number"
-                                                    className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    className="w-full border-none p-0 bg-transparent text-right"
                                                     aria-label="収入金額"
                                                     value={inc.amount}
                                                     onChange={(e) => updateData(d => ({
@@ -339,7 +339,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <td className="px-2 py-1">
                                                 <input
                                                     type="number"
-                                                    className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    className="w-full border-none p-0 bg-transparent text-right"
                                                     aria-label="収入開始年齢"
                                                     value={inc.startAge}
                                                     onChange={(e) => updateData(d => ({
@@ -351,7 +351,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <td className="px-2 py-1">
                                                 <input
                                                     type="number"
-                                                    className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    className="w-full border-none p-0 bg-transparent text-right"
                                                     aria-label="収入終了年齢"
                                                     value={inc.endAge}
                                                     onChange={(e) => updateData(d => ({
@@ -416,7 +416,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     <tr key={asset.id} className="hover:bg-gray-50">
                                         <td className="px-3 py-2">
                                             <input
-                                                className="w-full border-none p-0 focus:ring-0 bg-transparent font-medium"
+                                                className="w-full border-none p-0 bg-transparent font-medium"
                                                 aria-label="資産名称"
                                                 value={asset.name}
                                                 onChange={(e) => updateData(d => ({
@@ -427,7 +427,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         </td>
                                         <td className="px-3 py-2">
                                             <select
-                                                className="w-full border-none p-0 focus:ring-0 bg-transparent text-xs"
+                                                className="w-full border-none p-0 bg-transparent text-xs"
                                                 aria-label="資産種類"
                                                 value={asset.term}
                                                 onChange={(e) => updateData(d => ({
@@ -443,7 +443,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <input
                                                 type="number"
-                                                className="w-full border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                className="w-full border-none p-0 bg-transparent text-right"
                                                 aria-label="資産現在額"
                                                 value={asset.initialAmount}
                                                 onChange={(e) => updateData(d => ({
@@ -457,7 +457,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 <input
                                                     type="number"
                                                     step="0.1"
-                                                    className="w-12 border-none p-0 focus:ring-0 bg-transparent text-right"
+                                                    className="w-12 border-none p-0 bg-transparent text-right"
                                                     aria-label="資産の年利率"
                                                     value={asset.rate}
                                                     onChange={(e) => updateData(d => ({
@@ -836,7 +836,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             <div key={event.id} className="bg-white p-3 rounded-lg border shadow-sm">
                                 <div className="flex justify-between items-center mb-2">
                                     <input
-                                        className="font-medium text-gray-800 border-none p-0 focus:ring-0 flex-1"
+                                        className="font-medium text-gray-800 border-none p-0 flex-1"
                                         aria-label="イベント名"
                                         value={event.name}
                                         onChange={(e) => updateData(d => ({
@@ -927,7 +927,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             <div key={contrib.id} className="bg-white p-3 rounded-lg border shadow-sm">
                                 <div className="flex justify-between items-center mb-2">
                                     <input
-                                        className="font-medium text-gray-800 border-none p-0 focus:ring-0 flex-1"
+                                        className="font-medium text-gray-800 border-none p-0 flex-1"
                                         aria-label="積立設定名"
                                         value={contrib.name}
                                         onChange={(e) => updateData(d => ({
@@ -1055,7 +1055,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs bg-gray-100 px-2 py-1 rounded">{person?.name}</span>
                                             <input
-                                                className="font-medium text-gray-800 border-none p-0 focus:ring-0"
+                                                className="font-medium text-gray-800 border-none p-0"
                                                 aria-label="個人固定費名"
                                                 value={cost.name}
                                                 onChange={(e) => updateData(d => ({

@@ -58,7 +58,11 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                 columnHelper.accessor('expense.repayment', { header: '家ローン', cell: i => formatAmount(i.getValue()) }),
                 columnHelper.accessor('expense.investment', { header: '将来の積立', cell: i => formatAmount(i.getValue()) }),
                 columnHelper.accessor('expense.insurance', { header: '保険料', cell: i => formatAmount(i.getValue()) }),
-                columnHelper.accessor('expense.tax', { header: '税金・社保', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor((row) => row.expense.tax + row.expense.socialInsurance, {
+                    id: 'expense.taxAndSocialInsurance',
+                    header: '税金・社保',
+                    cell: i => formatAmount(i.getValue())
+                }),
                 columnHelper.accessor('expense.total', { header: '支出合計', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
             ]
         }),
@@ -112,7 +116,7 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                 r.income.assetWithdrawal, r.income.childAllowance, r.income.total,
                 r.expense.living, r.expense.housing, r.expense.education, r.expense.futurePlan,
                 r.expense.selfSpecific, r.expense.spouseSpecific, r.expense.familySpecific,
-                r.expense.repayment, r.expense.investment, r.expense.insurance, r.expense.tax, r.expense.total,
+                r.expense.repayment, r.expense.investment, r.expense.insurance, (r.expense.tax + r.expense.socialInsurance), r.expense.total,
                 r.balance, r.irregularExpense, r.netSavings, r.educationFundMaturity, r.surrenderValue,
             ].map(v => {
                 if (v === null || v === undefined) return '';

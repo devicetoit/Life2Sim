@@ -1299,6 +1299,163 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 </div>
                             </div>
                         </div>
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-2">制度ルール設定</label>
+                            <div className="space-y-3">
+                                <label htmlFor="settings-policy-enabled" className="flex items-center gap-2 text-xs text-gray-600">
+                                    <input
+                                        id="settings-policy-enabled"
+                                        type="checkbox"
+                                        name="settings-policy-enabled"
+                                        checked={data.settings.policy?.enabled !== false}
+                                        onChange={(e) => updateData(d => ({
+                                            ...d,
+                                            settings: {
+                                                ...d.settings,
+                                                policy: {
+                                                    ...d.settings.policy,
+                                                    enabled: e.target.checked
+                                                }
+                                            }
+                                        }))}
+                                    />
+                                    税・社保・年金の制度ルールを適用
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label htmlFor="settings-policy-region" className="text-xs text-gray-500">健康保険料率地域</label>
+                                        <select
+                                            id="settings-policy-region"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-region"
+                                            value={data.settings.policy?.healthInsuranceRegion || 'tokyo'}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        healthInsuranceRegion: e.target.value
+                                                    }
+                                                }
+                                            }))}
+                                        >
+                                            <option value="tokyo">東京（協会けんぽ）</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-employment-business" className="text-xs text-gray-500">雇用保険の事業区分</label>
+                                        <select
+                                            id="settings-policy-employment-business"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-employment-business"
+                                            value={data.settings.policy?.employmentInsuranceBusinessType || 'general'}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        employmentInsuranceBusinessType: e.target.value as 'general'
+                                                    }
+                                                }
+                                            }))}
+                                        >
+                                            <option value="general">一般の事業</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-resident-capita" className="text-xs text-gray-500">住民税均等割(年額, 円)</label>
+                                        <input
+                                            id="settings-policy-resident-capita"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-resident-capita"
+                                            value={data.settings.policy?.residentTaxPerCapitaYen ?? 5000}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        residentTaxPerCapitaYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-bonus-ratio" className="text-xs text-gray-500">給与中の賞与比率(0-1)</label>
+                                        <input
+                                            id="settings-policy-bonus-ratio"
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="1"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-bonus-ratio"
+                                            value={data.settings.policy?.salaryBonusRatio ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        salaryBonusRatio: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-bonus-payments" className="text-xs text-gray-500">賞与支給回数(年)</label>
+                                        <input
+                                            id="settings-policy-bonus-payments"
+                                            type="number"
+                                            min="1"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-bonus-payments"
+                                            value={data.settings.policy?.bonusPaymentsPerYear ?? 2}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        bonusPaymentsPerYear: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-ideco-category" className="text-xs text-gray-500">iDeCo区分</label>
+                                        <select
+                                            id="settings-policy-ideco-category"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-ideco-category"
+                                            value={data.settings.policy?.idecoCategory || 'company_employee_no_corporate_pension'}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        idecoCategory: e.target.value as 'self_employed' | 'company_employee_no_corporate_pension' | 'company_employee_with_corporate_pension' | 'public_servant' | 'dependent_spouse'
+                                                    }
+                                                }
+                                            }))}
+                                        >
+                                            <option value="company_employee_no_corporate_pension">会社員（企業年金なし）</option>
+                                            <option value="company_employee_with_corporate_pension">会社員（企業年金あり）</option>
+                                            <option value="public_servant">公務員</option>
+                                            <option value="self_employed">自営業</option>
+                                            <option value="dependent_spouse">専業主婦(夫)等</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 

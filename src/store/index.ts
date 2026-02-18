@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { ProjectData, AnnualResult } from '../types';
 import { calculateSimulation } from '../logic/engine';
 import { initialData } from './initialData';
+import { withPolicyDefaults } from '../lib/policyDefaults';
 
 interface AppState {
     data: ProjectData;
@@ -22,7 +23,7 @@ export const useStore = create<AppState>((set, get) => ({
     results: [],
 
     setData: (data) => {
-        set({ data });
+        set({ data: withPolicyDefaults(data) });
         get().recalc();
     },
 
@@ -46,7 +47,7 @@ export const useStore = create<AppState>((set, get) => ({
     importData: (json) => {
         try {
             const data = JSON.parse(json) as ProjectData;
-            set({ data });
+            set({ data: withPolicyDefaults(data) });
             get().recalc();
         } catch (e) {
             console.error("Import failed", e);

@@ -85,6 +85,15 @@ export const initialData: ProjectData = {
             emergencyFund: 50,
             recoveryFund: 100
         },
-        baseYear: 2025
+        baseYear: 2025,
+        policy: {
+            enabled: true,
+            healthInsuranceRegion: 'tokyo',
+            employmentInsuranceBusinessType: 'general',
+            residentTaxPerCapitaYen: 5000,
+            salaryBonusRatio: 0,
+            bonusPaymentsPerYear: 2,
+            idecoCategory: 'company_employee_no_corporate_pension'
+        }
     }
 };

@@ -1,4 +1,9 @@
 import { ProjectData, AnnualResult, RateCategory, Person, EducationTemplate, EducationPlan } from '../types';
+import {
+    estimateSalaryTaxAndSocialInsurance,
+    getAdjustedBasicPensionAnnualManYen,
+    capContributionByPolicyRules
+} from '../rules/policyRules';
 
 // Utility to calculate compound rate
 const getRate = (rates: Record<RateCategory, number>, category: RateCategory): number => {
@@ -121,6 +126,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
 
     // Determine Base Year from settings or calculate from birthYear and startAge.
     const baseYear = settings.baseYear || (self.birthYear + settings.startAge);
+    const policyEnabled = settings.policy?.enabled !== false;
 
     // Clone initial assets to track balances
     const currentAssets = assets.map(a => ({ ...a, balance: a.initialAmount }));
@@ -261,10 +267,33 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     const elapsed = personAge - inc.startAge;
                     gross = gross * Math.pow(1 + inc.annualGrowthRate, elapsed);
                 }
-                const taxAmount = gross * (1 - inc.taxRate);
+                // Public pension (basic pension) is normalized to rule-based baseline when enabled.
+                if (policyEnabled && inc.category === 'public_pension' && inc.name.includes('基礎年金')) {
+                    gross = getAdjustedBasicPensionAnnualManYen(inc.startAge);
+                }
+
+                let taxAmount = gross * (1 - inc.taxRate);
+                let socialInsuranceAmount = 0;
+                if (policyEnabled && inc.category === 'salary') {
+                    const estimated = estimateSalaryTaxAndSocialInsurance({
+                        annualIncomeManYen: gross,
+                        age: personAge,
+                        context: {
+                            healthInsuranceRegion: settings.policy?.healthInsuranceRegion,
+                            employmentInsuranceBusinessType: settings.policy?.employmentInsuranceBusinessType,
+                            residentTaxPerCapitaYen: settings.policy?.residentTaxPerCapitaYen,
+                            salaryBonusRatio: settings.policy?.salaryBonusRatio,
+                            bonusPaymentsPerYear: settings.policy?.bonusPaymentsPerYear,
+                            idecoCategory: settings.policy?.idecoCategory
+                        }
+                    });
+                    taxAmount = estimated.annualTaxManYen;
+                    socialInsuranceAmount = estimated.annualSocialInsuranceManYen;
+                }
 
                 totalIncome += gross;
                 expense.tax += taxAmount;
+                expense.socialInsurance += socialInsuranceAmount;
 
                 const isSelf = person?.relation === 'self';
                 const isSpouse = person?.relation === 'spouse';
@@ -445,7 +474,23 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         const yearContributions: Record<string, number> = {};
         contributions.forEach(c => {
             if (age >= c.startAge && age < c.endAge) {
-                const amount = (c.amount * (c.frequency === 'monthly' ? 12 : 1));
+                const annualAmount = (c.amount * (c.frequency === 'monthly' ? 12 : 1));
+                const asset = currentAssets.find(a => a.id === c.assetId);
+                const amount = policyEnabled
+                    ? capContributionByPolicyRules({
+                        contributionName: c.name,
+                        annualContributionManYen: annualAmount,
+                        isDcAsset: asset?.type === 'dc',
+                        context: {
+                            healthInsuranceRegion: settings.policy?.healthInsuranceRegion,
+                            employmentInsuranceBusinessType: settings.policy?.employmentInsuranceBusinessType,
+                            residentTaxPerCapitaYen: settings.policy?.residentTaxPerCapitaYen,
+                            salaryBonusRatio: settings.policy?.salaryBonusRatio,
+                            bonusPaymentsPerYear: settings.policy?.bonusPaymentsPerYear,
+                            idecoCategory: settings.policy?.idecoCategory
+                        }
+                    })
+                    : annualAmount;
                 yearContributions[c.assetId] = (yearContributions[c.assetId] || 0) + amount;
                 expense.investment += amount;
             }

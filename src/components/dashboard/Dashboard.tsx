@@ -57,6 +57,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-6">
+                    <div className="px-4 py-2 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">制度ルール</p>
+                        <p className={`text-xs font-bold ${data.settings.policy?.enabled !== false ? 'text-emerald-600' : 'text-slate-500'}`}>
+                            {data.settings.policy?.enabled !== false ? 'ON' : 'OFF'}
+                        </p>
+                    </div>
+
                     {/* Simplified Risk Mgmt */}
                     <div className="flex items-center gap-4 bg-rose-50/40 p-1 pl-4 rounded-2xl border border-rose-100/50 hover:bg-rose-50 transition-colors">
                         <div className="flex flex-col">

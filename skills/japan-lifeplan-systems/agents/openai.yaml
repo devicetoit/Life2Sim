@@ -1,0 +1,4 @@
+version: 1
+display_name: Japan Lifeplan Systems
+short_description: 日本の年金・税・社保制度をライフプラン計算へ正確に反映する
+default_prompt: 日本の制度（年金・税・社会保険・NISA/iDeCo）を適用開始日付きで整理し、実装可能なルールとして出力して。

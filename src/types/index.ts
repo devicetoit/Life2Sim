@@ -125,6 +125,15 @@ export interface SimulationSettings {
     deathAge?: number; // 万一シミュレーション用
     deathSettings?: DeathSettings;
     baseYear: number;
+    policy?: {
+        enabled?: boolean;
+        healthInsuranceRegion?: string;
+        employmentInsuranceBusinessType?: 'general';
+        residentTaxPerCapitaYen?: number;
+        salaryBonusRatio?: number;
+        bonusPaymentsPerYear?: number;
+        idecoCategory?: 'self_employed' | 'company_employee_no_corporate_pension' | 'company_employee_with_corporate_pension' | 'public_servant' | 'dependent_spouse';
+    };
 }
 
 export interface DeathSettings {

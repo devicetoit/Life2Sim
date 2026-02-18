@@ -1,0 +1,30 @@
+{
+  "version": "2026-02-18",
+  "currency": "JPY",
+  "unit": "yen",
+  "old_age_basic_pension": {
+    "effective_from": "2025-04-01",
+    "monthly_amount": 69308,
+    "annual_amount": 831696,
+    "default_claim_age": 65,
+    "minimum_coverage_years": 10
+  },
+  "early_claim_adjustment": {
+    "effective_from": "2022-04-01",
+    "monthly_rate": 0.004,
+    "max_reduction": 0.24,
+    "max_months": 60
+  },
+  "deferred_claim_adjustment": {
+    "effective_from": "2022-04-01",
+    "monthly_rate": 0.007,
+    "max_increase": 0.84,
+    "max_months": 120
+  },
+  "sources": [
+    "https://www.nenkin.go.jp/oshirase/taisetu/2025/202504/040102.html",
+    "https://www.nenkin.go.jp/service/yougo/ragyo/roureikisonenkin.html",
+    "https://www.nenkin.go.jp/service/jukyu/seido/roureinenkin/kuriage-kurisage/20140421-01.html",
+    "https://www.nenkin.go.jp/service/jukyu/seido/roureinenkin/kuriage-kurisage/20140421-02.html"
+  ]
+}

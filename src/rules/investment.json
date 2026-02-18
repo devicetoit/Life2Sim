@@ -1,0 +1,33 @@
+{
+  "version": "2026-02-18",
+  "currency": "JPY",
+  "unit": "yen",
+  "nisa": {
+    "effective_from": "2024-01-01",
+    "annual_limits": {
+      "tsumitate": 1200000,
+      "growth": 2400000,
+      "combined": 3600000
+    },
+    "lifetime_limits": {
+      "total": 18000000,
+      "growth": 12000000
+    },
+    "reuse_after_sale": true
+  },
+  "ideco": {
+    "effective_from": "2024-12-01",
+    "monthly_caps_by_category": {
+      "self_employed": 68000,
+      "company_employee_no_corporate_pension": 23000,
+      "company_employee_with_corporate_pension": 20000,
+      "public_servant": 20000,
+      "dependent_spouse": 23000
+    },
+    "combined_company_pension_cap": 55000
+  },
+  "sources": [
+    "https://www.fsa.go.jp/policy/nisa2/about/nisa/index.html",
+    "https://www.ideco-koushiki.jp/guide/"
+  ]
+}

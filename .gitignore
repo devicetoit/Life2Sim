@@ -47,3 +47,4 @@ pdf_p6_content.txt
 !package.json
 !package-lock.json
 !tsconfig*.json
+!src/rules/*.json

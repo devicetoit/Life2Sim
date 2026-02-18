@@ -1,0 +1,54 @@
+{
+  "version": "2026-02-18",
+  "currency": "JPY",
+  "unit": "yen",
+  "health_insurance": {
+    "default_region": "tokyo",
+    "rates_by_region": {
+      "tokyo": 0.0991
+    },
+    "employee_share_ratio": 0.5,
+    "standard_monthly_remuneration": {
+      "min": 58000,
+      "max": 1390000,
+      "rounding_unit": 1000
+    },
+    "standard_bonus": {
+      "annual_cap": 5730000
+    }
+  },
+  "nursing_care_insurance": {
+    "applicable_age_min": 40,
+    "applicable_age_max": 64,
+    "rate": 0.0159,
+    "employee_share_ratio": 0.5
+  },
+  "employee_pension_insurance": {
+    "rate": 0.183,
+    "employee_share_ratio": 0.5,
+    "standard_monthly_remuneration": {
+      "min": 88000,
+      "max": 650000,
+      "rounding_unit": 1000
+    },
+    "standard_bonus": {
+      "per_payment_cap": 1500000
+    }
+  },
+  "employment_insurance": {
+    "default_business_type": "general",
+    "rates": {
+      "general": {
+        "total_rate": 0.0145,
+        "employee_rate": 0.0055,
+        "employer_rate": 0.009
+      }
+    }
+  },
+  "sources": [
+    "https://www.kyoukaikenpo.or.jp/g7/cat330/sb3130/r7/25029/",
+    "https://www.kyoukaikenpo.or.jp/shibu/nagasaki/cat080/2025020701/",
+    "https://www.nenkin.go.jp/service/kounen/hokenryo-gaku/hokenryo.html",
+    "https://www.mhlw.go.jp/content/001407310.pdf"
+  ]
+}

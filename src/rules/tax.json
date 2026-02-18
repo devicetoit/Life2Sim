@@ -1,0 +1,46 @@
+{
+  "version": "2026-02-18",
+  "currency": "JPY",
+  "unit": "yen",
+  "income_tax": {
+    "brackets": [
+      { "up_to": 1949000, "rate": 0.05, "deduction": 0 },
+      { "up_to": 3299000, "rate": 0.1, "deduction": 97500 },
+      { "up_to": 6949000, "rate": 0.2, "deduction": 427500 },
+      { "up_to": 8999000, "rate": 0.23, "deduction": 636000 },
+      { "up_to": 17999000, "rate": 0.33, "deduction": 1536000 },
+      { "up_to": 39999000, "rate": 0.4, "deduction": 2796000 },
+      { "up_to": null, "rate": 0.45, "deduction": 4796000 }
+    ],
+    "reconstruction_surtax_rate": 0.021
+  },
+  "basic_deduction": [
+    { "max_total_income": 24000000, "amount": 480000 },
+    { "max_total_income": 24500000, "amount": 320000 },
+    { "max_total_income": 25000000, "amount": 160000 },
+    { "max_total_income": null, "amount": 0 }
+  ],
+  "salary_income_deduction": {
+    "bands": [
+      { "up_to": 1625000, "type": "fixed", "fixed_amount": 550000 },
+      { "up_to": 1800000, "type": "rate_plus", "rate": 0.4, "offset": -100000 },
+      { "up_to": 3600000, "type": "rate_plus", "rate": 0.3, "offset": 80000 },
+      { "up_to": 6600000, "type": "rate_plus", "rate": 0.2, "offset": 440000 },
+      { "up_to": 8500000, "type": "rate_plus", "rate": 0.1, "offset": 110000 },
+      { "up_to": null, "type": "fixed", "fixed_amount": 1950000 }
+    ]
+  },
+  "resident_tax": {
+    "standard_income_levy_rate": 0.1,
+    "prefectural_rate": 0.04,
+    "municipal_rate": 0.06,
+    "per_capita_yen_default": 4000,
+    "forest_environment_tax_yen_default": 1000
+  },
+  "sources": [
+    "https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/2260.htm",
+    "https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1199.htm",
+    "https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1410.htm",
+    "https://www.soumu.go.jp/main_sosiki/jichi_zeisei/czaisei/czaisei_seido/ich_ich.html"
+  ]
+}

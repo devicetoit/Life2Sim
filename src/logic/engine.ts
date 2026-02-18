@@ -2,7 +2,8 @@ import { ProjectData, AnnualResult, RateCategory, Person, EducationTemplate, Edu
 import {
     estimateSalaryTaxAndSocialInsurance,
     getAdjustedBasicPensionAnnualManYen,
-    capContributionByPolicyRules
+    capContributionByPolicyRules,
+    PolicyContext
 } from '../rules/policyRules';
 
 // Utility to calculate compound rate
@@ -126,7 +127,6 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
 
     // Determine Base Year from settings or calculate from birthYear and startAge.
     const baseYear = settings.baseYear || (self.birthYear + settings.startAge);
-    const policyEnabled = settings.policy?.enabled !== false;
 
     // Clone initial assets to track balances
     const currentAssets = assets.map(a => ({ ...a, balance: a.initialAmount }));
@@ -202,6 +202,9 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         const isDeathYear = isDeathScenario && age === settings.deathAge!;
 
         // --- Income & Expenses Preparation ---
+        const policyEnabled = settings.policy?.enabled;
+        const policyContext: PolicyContext = settings.policy || {};
+
         let totalIncome = 0;
         const income = {
             total: 0,
@@ -278,14 +281,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     const estimated = estimateSalaryTaxAndSocialInsurance({
                         annualIncomeManYen: gross,
                         age: personAge,
-                        context: {
-                            healthInsuranceRegion: settings.policy?.healthInsuranceRegion,
-                            employmentInsuranceBusinessType: settings.policy?.employmentInsuranceBusinessType,
-                            residentTaxPerCapitaYen: settings.policy?.residentTaxPerCapitaYen,
-                            salaryBonusRatio: settings.policy?.salaryBonusRatio,
-                            bonusPaymentsPerYear: settings.policy?.bonusPaymentsPerYear,
-                            idecoCategory: settings.policy?.idecoCategory
-                        }
+                        context: policyContext
                     });
                     taxAmount = estimated.annualTaxManYen;
                     socialInsuranceAmount = estimated.annualSocialInsuranceManYen;
@@ -481,14 +477,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                         contributionName: c.name,
                         annualContributionManYen: annualAmount,
                         isDcAsset: asset?.type === 'dc',
-                        context: {
-                            healthInsuranceRegion: settings.policy?.healthInsuranceRegion,
-                            employmentInsuranceBusinessType: settings.policy?.employmentInsuranceBusinessType,
-                            residentTaxPerCapitaYen: settings.policy?.residentTaxPerCapitaYen,
-                            salaryBonusRatio: settings.policy?.salaryBonusRatio,
-                            bonusPaymentsPerYear: settings.policy?.bonusPaymentsPerYear,
-                            idecoCategory: settings.policy?.idecoCategory
-                        }
+                        context: policyContext
                     })
                     : annualAmount;
                 yearContributions[c.assetId] = (yearContributions[c.assetId] || 0) + amount;

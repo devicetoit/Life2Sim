@@ -30,6 +30,26 @@
       { "up_to": null, "type": "fixed", "fixed_amount": 1950000 }
     ]
   },
+  "public_pension_deduction": {
+    "under_65": {
+      "bands": [
+        { "up_to": 1300000, "type": "fixed", "fixed_amount": 600000 },
+        { "up_to": 4100000, "type": "rate_plus", "rate": 0.75, "offset": -275000 },
+        { "up_to": 7700000, "type": "rate_plus", "rate": 0.85, "offset": -685000 },
+        { "up_to": 10000000, "type": "rate_plus", "rate": 0.95, "offset": -1455000 },
+        { "up_to": null, "type": "fixed", "fixed_amount": 1955000 }
+      ]
+    },
+    "age_65_and_over": {
+      "bands": [
+        { "up_to": 3300000, "type": "fixed", "fixed_amount": 1100000 },
+        { "up_to": 4100000, "type": "rate_plus", "rate": 0.75, "offset": -275000 },
+        { "up_to": 7700000, "type": "rate_plus", "rate": 0.85, "offset": -685000 },
+        { "up_to": 10000000, "type": "rate_plus", "rate": 0.95, "offset": -1455000 },
+        { "up_to": null, "type": "fixed", "fixed_amount": 1955000 }
+      ]
+    }
+  },
   "resident_tax": {
     "standard_income_levy_rate": 0.1,
     "prefectural_rate": 0.04,

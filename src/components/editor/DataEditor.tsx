@@ -26,6 +26,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
     const [isDragging, setIsDragging] = useState(false);
     const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const isJsonFile = (file: File): boolean =>
+        file.type === 'application/json' || file.name.toLowerCase().endsWith('.json');
 
     const handleFileImport = useCallback((file: File) => {
         const reader = new FileReader();
@@ -53,7 +55,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         e.preventDefault();
         setIsDragging(false);
         const file = e.dataTransfer.files[0];
-        if (file && file.type === 'application/json') {
+        if (file && isJsonFile(file)) {
             handleFileImport(file);
         } else {
             setImportStatus({ type: 'error', message: 'JSONファイルのみ対応しています。' });
@@ -72,8 +74,10 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
+        if (file && isJsonFile(file)) {
             handleFileImport(file);
+        } else if (file) {
+            setImportStatus({ type: 'error', message: 'JSONファイルのみ対応しています。' });
         }
     }, [handleFileImport]);
 
@@ -104,6 +108,61 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         a.download = `life-plan-params.csv`;
         a.click();
     };
+
+    const importSection = (
+        <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60 ring-1 ring-indigo-50/80">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">設定の読込 (JSON)</h3>
+            <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                aria-label="JSONファイルのドロップ領域"
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${isDragging
+                    ? 'border-indigo-500 bg-indigo-50'
+                    : 'border-slate-200 hover:border-slate-300'
+                    }`}
+            >
+                <FileJson className="mx-auto h-8 w-8 text-slate-400 mb-2" aria-hidden="true" />
+                <p className="text-xs text-slate-600 mb-3">最初に設定JSONを読み込んでから編集を開始できます</p>
+                <p className="text-[11px] text-slate-500 mb-4">JSONファイルをドラッグ&ドロップ、または下のボタンで選択</p>
+                <input
+                    ref={fileInputRef}
+                    id="config-upload-input"
+                    type="file"
+                    name="config-upload"
+                    autoComplete="off"
+                    accept=".json,application/json"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                />
+                <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="JSONファイルを選択"
+                    className="px-4 py-2 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition-colors inline-flex items-center gap-2"
+                >
+                    <Upload size={14} aria-hidden="true" />
+                    ファイル選択
+                </button>
+            </div>
+            {importStatus && (
+                <div
+                    role={importStatus.type === 'error' ? 'alert' : 'status'}
+                    aria-live="polite"
+                    className={`mt-4 p-3 rounded text-xs flex items-center gap-2 ${importStatus.type === 'success'
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-red-50 text-red-700'
+                        }`}
+                >
+                    {importStatus.type === 'success'
+                        ? <CheckCircle size={14} aria-hidden="true" />
+                        : <AlertCircle size={14} aria-hidden="true" />
+                    }
+                    {importStatus.message}
+                </div>
+            )}
+        </section>
+    );
 
     if (!isOpen && !isSidebar) {
         return (
@@ -136,6 +195,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
             </header>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-10">
+                {importSection}
+
                 {/* Export Section */}
                 <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60 transition-colors hover:border-indigo-100">
                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-5">保存と書き出し</h3>
@@ -156,23 +217,30 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Family Members</p>
                         </div>
                         <button
-                            onClick={() => updateData(d => ({
-                                ...d,
-                                people: [...d.people, {
-                                    id: `p${Date.now()}`,
-                                    name: '新規メンバー',
-                                    birthYear: 2000,
-                                    sex: 'male' as const,
-                                    relation: 'child' as const
-                                }]
-                            }))}
+                            onClick={() => updateData(d => {
+                                const newId = `p${Date.now()}`;
+                                return {
+                                    ...d,
+                                    people: [...d.people, {
+                                        id: newId,
+                                        name: '新規メンバー',
+                                        birthYear: 2000,
+                                        sex: 'male' as const,
+                                        relation: 'child' as const
+                                    }],
+                                    educationPlans: [
+                                        ...d.educationPlans,
+                                        { childId: newId, templateName: 'default', totalAmountOverride: 0 }
+                                    ]
+                                };
+                            })}
                             className="text-xs bg-pink-100 text-pink-700 px-3 py-1 rounded hover:bg-pink-200"
                         >
                             + 追加
                         </button>
                     </div>
-                    <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                        <table className="w-full text-sm">
+                    <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
+                        <table className="w-full min-w-max text-sm whitespace-nowrap">
                             <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                                 <tr>
                                     <th className="px-3 py-2 text-left">名前</th>
@@ -271,7 +339,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                         </button>
                     </div>
                     <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full min-w-max text-sm whitespace-nowrap">
                             <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                                 <tr>
                                     <th className="px-2 py-2 text-left">対象</th>
@@ -412,8 +480,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             + 追加
                         </button>
                     </div>
-                    <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                        <table className="w-full text-sm">
+                    <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
+                        <table className="w-full min-w-max text-sm whitespace-nowrap">
                             <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                                 <tr>
                                     <th className="px-3 py-2 text-left">名称</th>
@@ -576,8 +644,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                 </div>
                             </div>
 
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <div className="flex justify-between items-center mb-2">
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 overflow-x-auto">
+                                <div className="flex justify-between items-center mb-2 min-w-max gap-4">
                                     <label className="text-xs font-bold text-gray-500 uppercase">金利の切り替わり</label>
                                     <button
                                         onClick={() => updateData(d => ({
@@ -592,7 +660,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         + 期間追加
                                     </button>
                                 </div>
-                                <table className="w-full text-xs">
+                                <table className="w-full min-w-max text-xs whitespace-nowrap">
                                     <thead>
                                         <tr>
                                             <th className="text-left pb-1 font-normal text-gray-400">何年後まで</th>
@@ -873,9 +941,28 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                 </section>
 
                 <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
-                    <div className="flex flex-col mb-6">
-                        <h3 className="text-lg font-display font-bold text-slate-800">たまの出費（旅行・車など）</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Life Events & Large Expenses</p>
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-display font-bold text-slate-800">たまの出費（旅行・車など）</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Life Events & Large Expenses</p>
+                        </div>
+                        <button
+                            onClick={() => updateData(d => ({
+                                ...d,
+                                events: [...d.events, {
+                                    id: `e${Date.now()}`,
+                                    name: '新規イベント',
+                                    category: 'irregular' as const,
+                                    amount: 0,
+                                    type: 'one_time' as const,
+                                    startAge: 40,
+                                    rateCategory: 'none' as const
+                                }]
+                            }))}
+                            className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded hover:bg-amber-200"
+                        >
+                            + 追加
+                        </button>
                     </div>
                     <div className="space-y-2">
                         {data.events.map((event) => (
@@ -972,9 +1059,28 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
                 {/* Contributions Section */}
                 <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
-                    <div className="flex flex-col mb-6">
-                        <h3 className="text-lg font-display font-bold text-slate-800">積立設定</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Regular Savings & Contributions</p>
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-display font-bold text-slate-800">積立設定</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Regular Savings & Contributions</p>
+                        </div>
+                        <button
+                            onClick={() => updateData(d => ({
+                                ...d,
+                                contributions: [...d.contributions, {
+                                    id: `c${Date.now()}`,
+                                    name: '新規積立',
+                                    assetId: d.assets[0]?.id || 'a1',
+                                    amount: 0,
+                                    frequency: 'monthly' as const,
+                                    startAge: 35,
+                                    endAge: 60
+                                }]
+                            }))}
+                            className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded hover:bg-teal-200"
+                        >
+                            + 追加
+                        </button>
                     </div>
                     <div className="space-y-2">
                         {data.contributions.map((contrib) => (
@@ -1106,9 +1212,27 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
                 {/* Personal Fixed Costs Section */}
                 <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
-                    <div className="flex flex-col mb-6">
-                        <h3 className="text-lg font-display font-bold text-slate-800">個人固定費</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Personal Fixed Costs</p>
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-display font-bold text-slate-800">個人固定費</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Personal Fixed Costs</p>
+                        </div>
+                        <button
+                            onClick={() => updateData(d => ({
+                                ...d,
+                                personalFixedCosts: [...d.personalFixedCosts, {
+                                    id: `pf${Date.now()}`,
+                                    personId: d.people[0]?.id || 'p1',
+                                    name: '新規固定費',
+                                    amount: 0,
+                                    startAge: 35,
+                                    endAge: 65
+                                }]
+                            }))}
+                            className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded hover:bg-purple-200"
+                        >
+                            + 追加
+                        </button>
                     </div>
                     <div className="space-y-2">
                         {data.personalFixedCosts.map((cost) => {
@@ -1459,64 +1583,6 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                     </div>
                 </section>
 
-                {/* Import Section - Moved to bottom for advanced users */}
-                <section className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 opacity-60 hover:opacity-100 transition-opacity">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">バックアップ読込 (JSON)</h3>
-                    <div
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onClick={() => fileInputRef.current?.click()}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                fileInputRef.current?.click();
-                            }
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        aria-label="JSONファイルを選択またはドロップ"
-                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                    >
-                        <FileJson className="mx-auto h-8 w-8 text-gray-300 mb-2" />
-                        <p className="text-[10px] text-gray-500 mb-2">JSONファイルをドラッグ&ドロップ</p>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            name="config-upload"
-                            autoComplete="off"
-                            accept=".json"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                        />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded hover:bg-gray-200 transition-colors flex items-center gap-1 mx-auto"
-                        >
-                            <Upload size={12} />
-                            ファイル選択
-                        </button>
-                    </div>
-                    {importStatus && (
-                        <div
-                            role={importStatus.type === 'error' ? 'alert' : 'status'}
-                            aria-live="polite"
-                            className={`mt-4 p-2 rounded text-[10px] flex items-center gap-2 ${importStatus.type === 'success'
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-red-50 text-red-700'
-                                }`}
-                        >
-                            {importStatus.type === 'success'
-                                ? <CheckCircle size={12} />
-                                : <AlertCircle size={12} />
-                            }
-                            {importStatus.message}
-                        </div>
-                    )}
-                </section>
             </div>
 
             {!isSidebar && (
@@ -1546,7 +1612,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end">
-            <div className="animate-in slide-in-from-right duration-300 h-full w-full max-w-2xl">
+            <div className="motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-300 h-full w-full max-w-2xl">
                 {editorContent}
             </div>
         </div>

@@ -1,6 +1,6 @@
 import { ProjectData, AnnualResult, RateCategory, Person, EducationTemplate, EducationPlan } from '../types';
 import {
-    estimateSalaryTaxAndSocialInsurance,
+    estimateAnnualTaxAndSocialInsurance,
     getAdjustedBasicPensionAnnualManYen,
     capContributionByPolicyRules,
     PolicyContext
@@ -9,6 +9,11 @@ import {
 // Utility to calculate compound rate
 const getRate = (rates: Record<RateCategory, number>, category: RateCategory): number => {
     return (rates[category] || 0) / 100;
+};
+
+const applyAnnualRate = (baseAmount: number, annualRate: number, yearIndex: number): number => {
+    if (baseAmount === 0 || annualRate === 0 || yearIndex <= 0) return baseAmount;
+    return baseAmount * Math.pow(1 + annualRate, yearIndex);
 };
 
 // Calculate PMT for housing loan (Monthly) -> Return Monthly Pmt
@@ -35,19 +40,20 @@ const calculateEducationCosts = (
         const child = children.find(p => p.id === plan.childId);
         if (!child) return;
 
-        const template = templates[plan.templateName];
+        const templateName = plan.templateName || 'default';
+        const template = templates[templateName];
         if (!template) return;
 
         // Calculate scaling factor
         let scale = 1.0;
         if (plan.totalAmountOverride !== undefined) {
-            const templateTotal = template.yearlyCosts.reduce((sum, item) => sum + item.amount, 0);
+            const templateTotal = template.yearlyCosts.reduce((sum: number, item: { amount: number }) => sum + item.amount, 0);
             if (templateTotal > 0) {
                 scale = plan.totalAmountOverride / templateTotal;
             }
         }
 
-        template.yearlyCosts.forEach(item => {
+        template.yearlyCosts.forEach((item: { age: number, amount: number }) => {
             const age = item.age;
             // Child's age = currentYear - birthYear
             // Year when child is `age` => birthYear + age
@@ -213,6 +219,12 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             assetWithdrawal: 0,
             childAllowance: 0,
         };
+        const financing = {
+            assetLiquidation: 0,
+            assetTransfer: 0,
+            total: 0,
+        };
+        const personPolicyTaxInputs: Record<string, { age: number; salary: number; publicPension: number }> = {};
 
         const expense = {
             total: 0,
@@ -236,7 +248,9 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
 
         // 児童手当の自動計算
         const children = people.filter(p => p.relation === 'child');
+        // Treat automatically calculated child allowance as real yearly inflow.
         income.childAllowance += calculateChildAllowance(currentYear, children);
+        totalIncome += income.childAllowance;
 
         incomes.forEach(inc => {
             const person = people.find(p => p.id === inc.personId);
@@ -275,21 +289,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     gross = getAdjustedBasicPensionAnnualManYen(inc.startAge);
                 }
 
-                let taxAmount = gross * (1 - inc.taxRate);
-                let socialInsuranceAmount = 0;
-                if (policyEnabled && inc.category === 'salary') {
-                    const estimated = estimateSalaryTaxAndSocialInsurance({
-                        annualIncomeManYen: gross,
-                        age: personAge,
-                        context: policyContext
-                    });
-                    taxAmount = estimated.annualTaxManYen;
-                    socialInsuranceAmount = estimated.annualSocialInsuranceManYen;
-                }
-
                 totalIncome += gross;
-                expense.tax += taxAmount;
-                expense.socialInsurance += socialInsuranceAmount;
 
                 const isSelf = person?.relation === 'self';
                 const isSpouse = person?.relation === 'spouse';
@@ -321,6 +321,17 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 } else if (category === 'child_allowance') {
                     income.childAllowance += gross;
                 }
+
+                if (policyEnabled && (category === 'salary' || category === 'public_pension') && person) {
+                    const entry = personPolicyTaxInputs[person.id] || { age: personAge, salary: 0, publicPension: 0 };
+                    entry.age = personAge;
+                    if (category === 'salary') entry.salary += gross;
+                    if (category === 'public_pension') entry.publicPension += gross;
+                    personPolicyTaxInputs[person.id] = entry;
+                } else {
+                    const taxAmount = gross * (1 - inc.taxRate);
+                    expense.tax += taxAmount;
+                }
             }
         });
 
@@ -334,6 +345,21 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 year: currentYear,
                 age,
                 income,
+                financing: {
+                    assetLiquidation: 0,
+                    assetTransfer: 0,
+                    total: 0,
+                },
+                cashflow: {
+                    recurringIncome: 0,
+                    recurringExpense: 0,
+                    recurringBalance: 0,
+                    oneTimeIncome: 0,
+                    oneTimeExpense: 0,
+                    oneTimeNet: 0,
+                    financingIn: 0,
+                    finalNet: 0,
+                },
                 expense,
                 balance: 0,
                 irregularExpense: 0,
@@ -384,23 +410,49 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 const survivorPension = calculateSurvivorPension(currentYear, selfPerson, children, selfSalaryIncome?.amount || 0);
                 // 遺族年金をその他の収入として合算
                 income.spouse.publicPension += survivorPension;
+                totalIncome += survivorPension;
+                if (policyEnabled) {
+                    const spousePerson = people.find(p => p.relation === 'spouse');
+                    if (spousePerson) {
+                        const spouseAge = age - (spousePerson.birthYear - self.birthYear);
+                        const entry = personPolicyTaxInputs[spousePerson.id] || { age: spouseAge, salary: 0, publicPension: 0 };
+                        entry.age = spouseAge;
+                        entry.publicPension += survivorPension;
+                        personPolicyTaxInputs[spousePerson.id] = entry;
+                    }
+                }
             }
         }
 
+        if (policyEnabled) {
+            Object.values(personPolicyTaxInputs).forEach(input => {
+                const estimated = estimateAnnualTaxAndSocialInsurance({
+                    annualSalaryIncomeManYen: input.salary,
+                    annualPublicPensionIncomeManYen: input.publicPension,
+                    age: input.age,
+                    context: policyContext
+                });
+                expense.tax += estimated.annualTaxManYen;
+                expense.socialInsurance += estimated.annualSocialInsuranceManYen;
+            });
+        }
+
         // 2. Housing
+        const inflationRate = getRate(settings.rates, 'inflation');
         if (age < housing.purchaseAge) {
-            expense.housing = housing.rentalCost * 12;
+            expense.housing = applyAnnualRate(housing.rentalCost * 12, inflationRate, yearIndex);
         } else {
-            expense.housing = housing.maintenanceCost;
+            expense.housing = applyAnnualRate(housing.maintenanceCost, inflationRate, yearIndex);
             if (age < loanEndAge) {
                 expense.repayment = loanRepaymentsByAge[age] || 0;
             }
             if (age === housing.purchaseAge) {
-                expense.housing += housing.downPayment;
+                expense.housing += applyAnnualRate(housing.downPayment, inflationRate, yearIndex);
             }
         }
 
         // 3. Personal Fixed (Insurance is often here)
+        const fixedRate = getRate(settings.rates, 'fixed');
         personalFixedCosts.forEach(pfc => {
             const person = people.find(p => p.id === pfc.personId);
             if (isDead && person?.relation === 'self') return;
@@ -409,7 +461,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             if (pfc.startAge && personAge < pfc.startAge) return;
             if (pfc.endAge && personAge > pfc.endAge) return;
 
-            const cost = pfc.amount * 12;
+            const cost = applyAnnualRate(pfc.amount * 12, fixedRate, yearIndex);
             if (pfc.name.includes('保険')) {
                 expense.insurance += cost;
             } else if (person?.relation === 'self') {
@@ -437,7 +489,8 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             }
 
             if (isHit) {
-                const amt = evt.amount;
+                const eventRate = getRate(settings.rates, evt.rateCategory);
+                const amt = applyAnnualRate(evt.amount, eventRate, yearIndex);
                 if (evt.category === 'future_plan') {
                     expense.futurePlan += amt;
                 } else if (evt.category === 'irregular') {
@@ -451,7 +504,8 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         });
 
         // 5. Education
-        expense.education = educationCostsByYear[currentYear] || 0;
+        const educationRate = getRate(settings.rates, 'education');
+        expense.education = applyAnnualRate(educationCostsByYear[currentYear] || 0, educationRate, yearIndex);
 
         // 6. Death Costs
         if (isDeathYear && settings.deathSettings) {
@@ -490,7 +544,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             expense.selfSpecific + expense.spouseSpecific + expense.familySpecific +
             expense.repayment + expense.investment + expense.insurance + expense.tax + expense.socialInsurance;
 
-        const netYearlyBalance = totalIncome - expense.total; // ①
+        const recurringBalance = totalIncome - expense.total; // ①
 
         // Apply Interest & Contributions
         currentAssets.forEach(asset => {
@@ -502,7 +556,9 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
 
         // Apply Balance
         const cashAsset = currentAssets.find(a => a.type === 'cash');
-        let balanceToApply = totalIncome - expense.total - irregularExpense + educationFundMaturity + surrenderValueReceived;
+        // Single source of truth for yearly asset delta before withdrawals.
+        const oneTimeNet = -irregularExpense + educationFundMaturity + surrenderValueReceived;
+        let balanceToApply = recurringBalance + oneTimeNet;
 
         if (balanceToApply >= 0) {
             if (cashAsset) cashAsset.balance += balanceToApply;
@@ -527,6 +583,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 }
                 if (investmentWithdrawalTotal > 0) {
                     income.assetWithdrawal += investmentWithdrawalTotal;
+                    financing.assetLiquidation += investmentWithdrawalTotal;
                 }
             }
             if (deficit > 0 && cashAsset) {
@@ -544,10 +601,13 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                         cashAsset.balance += amount;
                         ta.balance = 0;
                         income.assetWithdrawal += amount;
+                        financing.assetTransfer += amount;
                     }
                 });
             }
         }
+
+        financing.total = financing.assetLiquidation + financing.assetTransfer;
 
         // Asset Classification
         let shortTerm = 0, mediumTerm = 0, longTerm = 0;
@@ -560,19 +620,30 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             else if (term === 'long') longTerm += a.balance;
         });
 
-        // 収入合計を各項目の和として算出
-        income.total = income.self.salary + income.self.publicPension + income.self.privatePension + income.self.individualPension +
-            income.spouse.salary + income.spouse.publicPension + income.spouse.privatePension + income.spouse.individualPension +
-            income.childAllowance + income.assetWithdrawal;
+        // Keep income.total aligned with the same income base used for recurring balance.
+        income.total = totalIncome;
+        const oneTimeIncome = educationFundMaturity + surrenderValueReceived;
+        const oneTimeExpense = irregularExpense;
 
         results.push({
             year: currentYear,
             age,
             income,
+            financing,
+            cashflow: {
+                recurringIncome: totalIncome,
+                recurringExpense: expense.total,
+                recurringBalance,
+                oneTimeIncome,
+                oneTimeExpense,
+                oneTimeNet,
+                financingIn: financing.total,
+                finalNet: recurringBalance + oneTimeNet + financing.total,
+            },
             expense,
-            balance: netYearlyBalance,
+            balance: recurringBalance,
             irregularExpense,
-            netSavings: netYearlyBalance - irregularExpense,
+            netSavings: recurringBalance + oneTimeNet,
             educationFundMaturity,
             surrenderValue: surrenderValueReceived,
             assets: {

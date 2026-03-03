@@ -10,24 +10,26 @@ interface Props {
 export const SummaryCards: React.FC<Props> = ({ results }) => {
     if (!results.length) return null;
 
-    // 1. Min Balance
-    let minBalance = Infinity;
-    let minBalanceAge = -1;
-
-    // 2. Bankruptcy (Depletion)
+    // 1. Bankruptcy (Depletion)
     let bankruptcyAge = -1;
     let bankruptcyAmount = 0;
+    let recurringDeficitYears = 0;
+    let financingYears = 0;
+    let financingTotal = 0;
 
     results.forEach(r => {
-        if (r.assets.total < minBalance) {
-            minBalance = r.assets.total;
-            minBalanceAge = r.age;
-        }
-
         // Check first year of negative
         if (r.assets.total < 0 && bankruptcyAge === -1) {
             bankruptcyAge = r.age;
             bankruptcyAmount = r.assets.total;
+        }
+
+        if (r.cashflow.recurringBalance < 0) {
+            recurringDeficitYears += 1;
+        }
+        if (r.financing.total > 0) {
+            financingYears += 1;
+            financingTotal += r.financing.total;
         }
     });
 
@@ -40,7 +42,7 @@ export const SummaryCards: React.FC<Props> = ({ results }) => {
                     <div className={`p-2 rounded-xl ${!isSafe ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
                         <AlertTriangle size={20} />
                     </div>
-                    <h3 className="font-bold text-slate-700 font-display">お金がなくなる時期</h3>
+                    <h3 className="font-bold text-slate-700 font-display">資産の安全性</h3>
                 </div>
                 <p className={`text-4xl font-display font-bold tracking-tight mb-2 ${!isSafe ? 'text-rose-700' : 'text-emerald-700'}`}>
                     {isSafe ? 'ずっと安心' : `${bankruptcyAge}歳ごろ`}
@@ -57,13 +59,13 @@ export const SummaryCards: React.FC<Props> = ({ results }) => {
                     <div className="p-2 rounded-xl bg-blue-50 text-blue-500 font-bold">
                         <TrendingDown size={20} />
                     </div>
-                    <h3 className="font-bold text-slate-700 font-display">いちばん貯金が少ない時</h3>
+                    <h3 className="font-bold text-slate-700 font-display">生活費が赤字だった年</h3>
                 </div>
                 <p className="text-4xl font-display font-bold text-slate-900 tracking-tight mb-2">
-                    {formatInteger(Math.round(minBalance))}万円
+                    {recurringDeficitYears}年
                 </p>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                    <span className="text-blue-500">{minBalanceAge}歳</span> のとき
+                <p className="text-xs text-slate-500 font-bold tracking-wide">
+                    給与・年金などの経常収入だけでは、支出をまかなえなかった年数
                 </p>
             </div>
 
@@ -72,13 +74,14 @@ export const SummaryCards: React.FC<Props> = ({ results }) => {
                     <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500 font-bold">
                         <Wallet size={20} />
                     </div>
-                    <h3 className="font-bold text-slate-700 font-display">生涯のさいごに残るお金</h3>
+                    <h3 className="font-bold text-slate-700 font-display">貯金や資産に頼った年</h3>
                 </div>
                 <p className="text-4xl font-display font-bold text-slate-900 tracking-tight mb-2">
-                    {formatInteger(Math.round(results[results.length - 1].assets.total))}万円
+                    {financingYears}年
                 </p>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                    <span className="text-indigo-500">{results[results.length - 1].age}歳</span> のとき
+                <p className="text-xs text-slate-500 font-bold tracking-wide">
+                    不足分を補うために、取り崩し・資産移管を使った累計
+                    <span className="text-indigo-600 ml-1">{formatInteger(Math.round(financingTotal))}万円</span>
                 </p>
             </div>
         </div>

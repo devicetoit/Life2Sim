@@ -84,7 +84,7 @@ export interface EducationTemplate {
 
 export interface EducationPlan {
     childId: string;
-    templateName: string;
+    templateName?: string;
     totalAmountOverride?: number; // 累計スケーリング用 (万円)
 }
 
@@ -164,6 +164,21 @@ export interface AnnualResult {
         };
         assetWithdrawal: number;
         childAllowance: number;
+    };
+    financing: {
+        assetLiquidation: number; // 投資資産の取り崩し
+        assetTransfer: number; // 資産区分移管（例: 65歳時DC/投資→現金）
+        total: number;
+    };
+    cashflow: {
+        recurringIncome: number; // 経常収入
+        recurringExpense: number; // 経常支出
+        recurringBalance: number; // 経常収支
+        oneTimeIncome: number; // 臨時収入
+        oneTimeExpense: number; // 臨時支出
+        oneTimeNet: number; // 臨時収支
+        financingIn: number; // 資金調達流入
+        finalNet: number; // 経常収支 + 臨時収支 + 資金調達
     };
     expense: {
         total: number;

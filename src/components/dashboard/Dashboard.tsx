@@ -107,9 +107,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <button
                                     onClick={onSave}
                                     disabled={isSaving || isSyncing}
-                                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 transition-colors transition-transform flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 transition-colors motion-safe:transition-transform flex items-center gap-2 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
                                 >
-                                    <CloudUpload size={14} className={isSaving ? 'animate-bounce' : ''} />
+                                    <CloudUpload size={14} className={isSaving ? 'motion-safe:animate-bounce' : ''} />
                                     {isSaving ? '保存中…' : '保存'}
                                 </button>
                                 <button
@@ -140,7 +140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div
                     role="alert"
                     aria-live="polite"
-                    className="bg-rose-50 border-b border-rose-100 px-8 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top duration-300"
+                    className="bg-rose-50 border-b border-rose-100 px-8 py-3 flex items-center gap-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top motion-safe:duration-300"
                 >
                     <div className="p-1 bg-rose-100 rounded-lg">
                         <Save size={14} className="text-rose-600" />
@@ -154,7 +154,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="max-w-[1400px] mx-auto">
                         <SummaryCards results={results} />
 
-                        <div className={`grid grid-cols-1 ${isSidebarOpen ? '2xl:grid-cols-2' : 'xl:grid-cols-2'} gap-8 mt-10`}>
+                        <div className="grid grid-cols-1 gap-8 mt-10">
                             <div className="bg-white p-8 rounded-[2rem] premium-shadow border border-slate-200/60 ring-1 ring-slate-100">
                                 <h2 className="text-xl font-display font-bold text-slate-800 mb-8 flex items-center gap-3">
                                     <div className="p-2.5 bg-indigo-50 rounded-xl">
@@ -184,8 +184,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
 
                 {/* Right Sidebar Editor */}
-                <aside className={`${isSidebarOpen ? 'w-[400px] translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0'} transition-[width,opacity,transform] duration-300 ease-in-out border-l border-slate-200 bg-white overflow-hidden flex flex-col`}>
-                    <div className="w-[400px] h-full overflow-y-auto">
+                <aside
+                    className={`hidden xl:flex ${isSidebarOpen ? 'translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0'} transition-[width,opacity,transform] duration-300 ease-in-out border-l border-slate-200 bg-white overflow-hidden flex-col`}
+                    style={{ width: isSidebarOpen ? 'min(580px, 42vw)' : '0px' }}
+                >
+                    <div className="h-full overflow-y-auto" style={{ width: 'min(580px, 42vw)' }}>
                         <DataEditor isSidebar={true} />
                     </div>
                 </aside>

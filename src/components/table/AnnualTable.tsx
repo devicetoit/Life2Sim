@@ -40,9 +40,9 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
         columnHelper.group({
             header: 'その他',
             columns: [
-                columnHelper.accessor('income.assetWithdrawal', { header: '貯金の切崩', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('income.assetWithdrawal', { header: '資金調達合計', cell: i => formatAmount(i.getValue()) }),
                 columnHelper.accessor('income.childAllowance', { header: '児童手当', cell: i => formatAmount(i.getValue()) }),
-                columnHelper.accessor('income.total', { header: '年収合計', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
+                columnHelper.accessor('income.total', { header: '経常収入合計', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
             ]
         }),
         columnHelper.group({
@@ -64,6 +64,20 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                     cell: i => formatAmount(i.getValue())
                 }),
                 columnHelper.accessor('expense.total', { header: '支出合計', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
+            ]
+        }),
+        columnHelper.group({
+            header: '3区分キャッシュフロー',
+            columns: [
+                columnHelper.accessor('cashflow.recurringIncome', { header: '経常収入', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('cashflow.recurringExpense', { header: '経常支出', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('cashflow.recurringBalance', { header: '経常収支', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('cashflow.oneTimeIncome', { header: '臨時収入', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('cashflow.oneTimeExpense', { header: '臨時支出', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('cashflow.oneTimeNet', { header: '臨時収支', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('financing.assetLiquidation', { header: '資金調達(取崩)', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('financing.assetTransfer', { header: '資金調達(移管)', cell: i => formatAmount(i.getValue()) }),
+                columnHelper.accessor('cashflow.finalNet', { header: '最終純増減', cell: i => <span className="font-bold">{formatAmount(i.getValue())}</span> }),
             ]
         }),
         columnHelper.group({
@@ -117,7 +131,11 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                 r.expense.living, r.expense.housing, r.expense.education, r.expense.futurePlan,
                 r.expense.selfSpecific, r.expense.spouseSpecific, r.expense.familySpecific,
                 r.expense.repayment, r.expense.investment, r.expense.insurance, (r.expense.tax + r.expense.socialInsurance), r.expense.total,
+                r.cashflow.recurringIncome, r.cashflow.recurringExpense, r.cashflow.recurringBalance,
+                r.cashflow.oneTimeIncome, r.cashflow.oneTimeExpense, r.cashflow.oneTimeNet,
+                r.financing.assetLiquidation, r.financing.assetTransfer, r.cashflow.finalNet,
                 r.balance, r.irregularExpense, r.netSavings, r.educationFundMaturity, r.surrenderValue,
+                r.assets.shortTerm, r.assets.mediumTerm, r.assets.longTerm, r.assets.total,
             ].map(v => {
                 if (v === null || v === undefined) return '';
                 const s = String(v);

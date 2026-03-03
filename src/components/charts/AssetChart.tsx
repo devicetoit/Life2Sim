@@ -22,6 +22,13 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
         year: r.year,
         ...r.assets.byCategory
     }));
+    const minAge = data[0]?.age ?? 0;
+    const maxAge = data[data.length - 1]?.age ?? 0;
+    const xTicks: number[] = [];
+    const tickStart = minAge % 2 === 0 ? minAge : minAge + 1;
+    for (let v = tickStart; v <= maxAge; v += 2) xTicks.push(v);
+    if (xTicks.length === 0 || xTicks[0] !== minAge) xTicks.unshift(minAge);
+    if (xTicks[xTicks.length - 1] !== maxAge) xTicks.push(maxAge);
 
     // Create a mapping of id to name would be better, but simplified for now:
     // We need to map assetId to name to color... 
@@ -43,12 +50,18 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
         <div className="h-96 w-full bg-white p-2 rounded-lg">
             <h3 className="text-lg font-semibold mb-4">貯金の増えかた (合計)</h3>
             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <AreaChart data={data} margin={{ top: 52, right: 30, left: 40, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="age" label={{ value: '年齢', position: 'insideBottomRight', offset: -5 }} />
+                    <XAxis
+                        dataKey="age"
+                        type="number"
+                        ticks={xTicks}
+                        domain={[minAge, maxAge]}
+                        label={{ value: '年齢', position: 'insideBottomRight', offset: -5 }}
+                    />
                     <YAxis label={{ value: '万円', angle: -90, position: 'insideLeft' }} />
                     <Tooltip formatter={(value: number) => `${formatAmount(value)}万円`} />
-                    <Legend />
+                    <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8 }} />
                     {keys.map((key, index) => (
                         <Area
                             key={key}

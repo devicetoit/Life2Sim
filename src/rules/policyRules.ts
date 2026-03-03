@@ -44,6 +44,23 @@ const getSalaryIncomeDeductionYen = (salaryIncomeYen: number): number => {
     return 0;
 };
 
+const getPublicPensionDeductionYen = (publicPensionIncomeYen: number, age: number): number => {
+    const deductionRules = age >= 65
+        ? taxRules.public_pension_deduction.age_65_and_over
+        : taxRules.public_pension_deduction.under_65;
+
+    for (const band of deductionRules.bands) {
+        if (band.up_to === null || publicPensionIncomeYen <= band.up_to) {
+            if (band.type === 'fixed') {
+                return Math.min(publicPensionIncomeYen, band.fixed_amount ?? 0);
+            }
+            const deduction = publicPensionIncomeYen * (band.rate ?? 0) + (band.offset ?? 0);
+            return Math.max(0, Math.min(publicPensionIncomeYen, deduction));
+        }
+    }
+    return 0;
+};
+
 const getIncomeTaxBaseYen = (taxableIncomeYen: number): number => {
     if (taxableIncomeYen <= 0) return 0;
     for (const bracket of taxRules.income_tax.brackets) {
@@ -54,24 +71,13 @@ const getIncomeTaxBaseYen = (taxableIncomeYen: number): number => {
     return 0;
 };
 
-export const estimateSalaryTaxAndSocialInsurance = (params: {
-    annualIncomeManYen: number;
+const estimateEmployeeSocialInsuranceYen = (params: {
+    annualSalaryIncomeYen: number;
     age: number;
     context?: PolicyContext;
-}): { annualTaxManYen: number; annualSocialInsuranceManYen: number } => {
-    const annualIncomeYen = params.annualIncomeManYen * MAN_YEN_TO_YEN;
-    const salaryDeductionYen = getSalaryIncomeDeductionYen(annualIncomeYen);
-    const basicDeductionYen = getBasicDeductionYen(annualIncomeYen);
-    const taxableIncomeYen = Math.max(0, annualIncomeYen - salaryDeductionYen - basicDeductionYen);
-
-    const incomeTaxBaseYen = Math.max(0, getIncomeTaxBaseYen(taxableIncomeYen));
-    const reconstructionTaxYen = incomeTaxBaseYen * taxRules.income_tax.reconstruction_surtax_rate;
-    const residentTaxPerCapitaYen =
-        params.context?.residentTaxPerCapitaYen
-        ?? (taxRules.resident_tax.per_capita_yen_default + taxRules.resident_tax.forest_environment_tax_yen_default);
-    const residentTaxYen = taxableIncomeYen * taxRules.resident_tax.standard_income_levy_rate + residentTaxPerCapitaYen;
-    const annualTaxYen = incomeTaxBaseYen + reconstructionTaxYen + residentTaxYen;
-
+}): number => {
+    const annualIncomeYen = params.annualSalaryIncomeYen;
+    if (annualIncomeYen <= 0) return 0;
     const region = params.context?.healthInsuranceRegion || socialInsuranceRules.health_insurance.default_region;
     const healthRateTotal = socialInsuranceRules.health_insurance.rates_by_region[region as keyof typeof socialInsuranceRules.health_insurance.rates_by_region]
         ?? socialInsuranceRules.health_insurance.rates_by_region[socialInsuranceRules.health_insurance.default_region as keyof typeof socialInsuranceRules.health_insurance.rates_by_region];
@@ -128,10 +134,55 @@ export const estimateSalaryTaxAndSocialInsurance = (params: {
         pensionBonusPremiumYen +
         employmentInsuranceYen;
 
+    return annualSocialInsuranceYen;
+};
+
+export const estimateAnnualTaxAndSocialInsurance = (params: {
+    annualSalaryIncomeManYen: number;
+    annualPublicPensionIncomeManYen: number;
+    age: number;
+    context?: PolicyContext;
+}): { annualTaxManYen: number; annualSocialInsuranceManYen: number } => {
+    const annualSalaryIncomeYen = params.annualSalaryIncomeManYen * MAN_YEN_TO_YEN;
+    const annualPublicPensionIncomeYen = params.annualPublicPensionIncomeManYen * MAN_YEN_TO_YEN;
+
+    const salaryIncomeAmountYen = Math.max(0, annualSalaryIncomeYen - getSalaryIncomeDeductionYen(annualSalaryIncomeYen));
+    const pensionIncomeAmountYen = Math.max(0, annualPublicPensionIncomeYen - getPublicPensionDeductionYen(annualPublicPensionIncomeYen, params.age));
+    const totalIncomeAmountYen = salaryIncomeAmountYen + pensionIncomeAmountYen;
+
+    const annualSocialInsuranceYen = estimateEmployeeSocialInsuranceYen({
+        annualSalaryIncomeYen,
+        age: params.age,
+        context: params.context
+    });
+    const basicDeductionYen = getBasicDeductionYen(totalIncomeAmountYen);
+    const taxableIncomeYen = Math.max(0, totalIncomeAmountYen - basicDeductionYen - annualSocialInsuranceYen);
+
+    const incomeTaxBaseYen = Math.max(0, getIncomeTaxBaseYen(taxableIncomeYen));
+    const reconstructionTaxYen = incomeTaxBaseYen * taxRules.income_tax.reconstruction_surtax_rate;
+    const residentTaxPerCapitaYen =
+        params.context?.residentTaxPerCapitaYen
+        ?? (taxRules.resident_tax.per_capita_yen_default + taxRules.resident_tax.forest_environment_tax_yen_default);
+    const residentTaxYen = taxableIncomeYen * taxRules.resident_tax.standard_income_levy_rate + residentTaxPerCapitaYen;
+    const annualTaxYen = incomeTaxBaseYen + reconstructionTaxYen + residentTaxYen;
+
     return {
         annualTaxManYen: annualTaxYen / MAN_YEN_TO_YEN,
         annualSocialInsuranceManYen: annualSocialInsuranceYen / MAN_YEN_TO_YEN
     };
+};
+
+export const estimateSalaryTaxAndSocialInsurance = (params: {
+    annualIncomeManYen: number;
+    age: number;
+    context?: PolicyContext;
+}): { annualTaxManYen: number; annualSocialInsuranceManYen: number } => {
+    return estimateAnnualTaxAndSocialInsurance({
+        annualSalaryIncomeManYen: params.annualIncomeManYen,
+        annualPublicPensionIncomeManYen: 0,
+        age: params.age,
+        context: params.context
+    });
 };
 
 export const getOldAgeBasicPensionAnnualManYen = (): number => {

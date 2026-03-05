@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { ProjectData, AnnualResult } from '../types';
 import { calculateSimulation } from '../logic/engine';
 import { initialData } from './initialData';
-import { withPolicyDefaults } from '../lib/policyDefaults';
+import { normalizeProjectData } from '../lib/projectDataNormalizer';
 
 interface AppState {
     data: ProjectData;
@@ -19,11 +19,11 @@ interface AppState {
 export const STORAGE_KEY = 'life-plan-storage-v1.10';
 
 export const useStore = create<AppState>((set, get) => ({
-    data: initialData,
+    data: normalizeProjectData(initialData),
     results: [],
 
     setData: (data) => {
-        set({ data: withPolicyDefaults(data) });
+        set({ data: normalizeProjectData(data) });
         get().recalc();
     },
 
@@ -47,7 +47,7 @@ export const useStore = create<AppState>((set, get) => ({
     importData: (json) => {
         try {
             const data = JSON.parse(json) as ProjectData;
-            set({ data: withPolicyDefaults(data) });
+            set({ data: normalizeProjectData(data) });
             get().recalc();
         } catch (e) {
             console.error("Import failed", e);
@@ -55,7 +55,7 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     reset: () => {
-        set({ data: initialData });
+        set({ data: normalizeProjectData(initialData) });
         get().recalc();
     }
 }));

@@ -111,7 +111,8 @@ export interface Housing {
 
 export interface PersonalFixedCost {
     id: string;
-    personId: string;
+    personId?: string;
+    target?: 'person' | 'family';
     name: string;
     amount: number; // 月額 (万円)
     startAge?: number; // 指定なしは全期間
@@ -125,6 +126,13 @@ export interface SimulationSettings {
     deathAge?: number; // 万一シミュレーション用
     deathSettings?: DeathSettings;
     baseYear: number;
+    assetTransferAges?: {
+        investment?: number;
+        dc?: number;
+    };
+    glipCompatibility?: {
+        includeTransfersInIncomeTotal?: boolean;
+    };
     policy?: {
         enabled?: boolean;
         healthInsuranceRegion?: string;

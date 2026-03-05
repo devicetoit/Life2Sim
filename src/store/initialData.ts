@@ -86,6 +86,13 @@ export const initialData: ProjectData = {
             recoveryFund: 100
         },
         baseYear: 2025,
+        assetTransferAges: {
+            investment: 65,
+            dc: 65
+        },
+        glipCompatibility: {
+            includeTransfersInIncomeTotal: false
+        },
         policy: {
             enabled: true,
             healthInsuranceRegion: 'tokyo',

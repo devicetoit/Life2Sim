@@ -354,7 +354,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             <tbody className="divide-y">
                                 {data.incomes.map((inc) => {
                                     return (
-                                        <tr key={inc.id} className="hover:bg-gray-50">
+                                        <React.Fragment key={inc.id}>
+                                        <tr className="hover:bg-gray-50">
                                             <td className="px-2 py-1">
                                                 <select
                                                     className="w-full border-none p-0 bg-transparent text-xs"
@@ -393,8 +394,11 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                         incomes: d.incomes.map(i => i.id === inc.id ? { ...i, category: e.target.value as any } : i)
                                                     }))}
                                                 >
-                                                    <option value="salary">給与（手取り）</option>
+                                                    <option value="salary">給与</option>
                                                     <option value="public_pension">公的年金</option>
+                                                    <option value="private_pension">私的年金</option>
+                                                    <option value="individual_pension">個人年金</option>
+                                                    <option value="child_allowance">手当</option>
                                                     <option value="other">その他</option>
                                                 </select>
                                             </td>
@@ -450,6 +454,97 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 </button>
                                             </td>
                                         </tr>
+                                        <tr className="bg-gray-50/40">
+                                            <td colSpan={7} className="px-3 py-2">
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+                                                    <div>
+                                                        <label htmlFor={`income-tax-rate-${inc.id}`} className="text-gray-500">手取り率</label>
+                                                        <input
+                                                            id={`income-tax-rate-${inc.id}`}
+                                                            type="number"
+                                                            step="0.01"
+                                                            min="0"
+                                                            max="1"
+                                                            className="w-full border-gray-200 rounded mt-1"
+                                                            value={inc.taxRate}
+                                                            onChange={(e) => updateData(d => ({
+                                                                ...d,
+                                                                incomes: d.incomes.map(i => i.id === inc.id ? { ...i, taxRate: Number(e.target.value) } : i)
+                                                            }))}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label htmlFor={`income-growth-rate-${inc.id}`} className="text-gray-500">年成長率</label>
+                                                        <input
+                                                            id={`income-growth-rate-${inc.id}`}
+                                                            type="number"
+                                                            step="0.001"
+                                                            className="w-full border-gray-200 rounded mt-1"
+                                                            value={inc.annualGrowthRate ?? ''}
+                                                            onChange={(e) => updateData(d => ({
+                                                                ...d,
+                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
+                                                                    ...i,
+                                                                    annualGrowthRate: e.target.value === '' ? undefined : Number(e.target.value)
+                                                                } : i)
+                                                            }))}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label htmlFor={`income-peak-amount-${inc.id}`} className="text-gray-500">ピーク金額(万円)</label>
+                                                        <input
+                                                            id={`income-peak-amount-${inc.id}`}
+                                                            type="number"
+                                                            className="w-full border-gray-200 rounded mt-1"
+                                                            value={inc.peakAmount ?? ''}
+                                                            onChange={(e) => updateData(d => ({
+                                                                ...d,
+                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
+                                                                    ...i,
+                                                                    peakAmount: e.target.value === '' ? undefined : Number(e.target.value)
+                                                                } : i)
+                                                            }))}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label htmlFor={`income-peak-age-${inc.id}`} className="text-gray-500">ピーク年齢</label>
+                                                        <input
+                                                            id={`income-peak-age-${inc.id}`}
+                                                            type="number"
+                                                            className="w-full border-gray-200 rounded mt-1"
+                                                            value={inc.peakAge ?? ''}
+                                                            onChange={(e) => updateData(d => ({
+                                                                ...d,
+                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
+                                                                    ...i,
+                                                                    peakAge: e.target.value === '' ? undefined : Number(e.target.value)
+                                                                } : i)
+                                                            }))}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label htmlFor={`income-decay-rate-${inc.id}`} className="text-gray-500">減衰率</label>
+                                                        <input
+                                                            id={`income-decay-rate-${inc.id}`}
+                                                            type="number"
+                                                            step="0.001"
+                                                            min="0"
+                                                            max="1"
+                                                            className="w-full border-gray-200 rounded mt-1"
+                                                            value={inc.annualDecayRate ?? ''}
+                                                            onChange={(e) => updateData(d => ({
+                                                                ...d,
+                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
+                                                                    ...i,
+                                                                    annualDecayRate: e.target.value === '' ? undefined : Number(e.target.value)
+                                                                } : i)
+                                                            }))}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        </React.Fragment>
                                     );
                                 })}
                             </tbody>
@@ -485,7 +580,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                                 <tr>
                                     <th className="px-3 py-2 text-left">名称</th>
-                                    <th className="px-3 py-2 text-left">種類</th>
+                                    <th className="px-3 py-2 text-left">運用タイプ</th>
+                                    <th className="px-3 py-2 text-left">期間区分</th>
                                     <th className="px-3 py-2 text-right">現在の金額</th>
                                     <th className="px-3 py-2 text-right">増える割合(年)</th>
                                     <th className="px-3 py-2 w-8"></th>
@@ -510,16 +606,31 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <td className="px-3 py-2">
                                             <select
                                                 className="w-full border-none p-0 bg-transparent text-xs"
-                                                aria-label="資産種類"
+                                                aria-label="資産運用タイプ"
+                                                value={asset.type}
+                                                onChange={(e) => updateData(d => ({
+                                                    ...d,
+                                                    assets: d.assets.map(a => a.id === asset.id ? { ...a, type: e.target.value as any } : a)
+                                                }))}
+                                            >
+                                                <option value="cash">現金</option>
+                                                <option value="investment">投資</option>
+                                                <option value="dc">DC/iDeCo</option>
+                                            </select>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <select
+                                                className="w-full border-none p-0 bg-transparent text-xs"
+                                                aria-label="資産期間区分"
                                                 value={asset.term}
                                                 onChange={(e) => updateData(d => ({
                                                     ...d,
                                                     assets: d.assets.map(a => a.id === asset.id ? { ...a, term: e.target.value as any } : a)
                                                 }))}
                                             >
-                                                <option value="short">普通預金など</option>
-                                                <option value="medium">定期預金など</option>
-                                                <option value="long">投資信託など</option>
+                                                <option value="short">短期</option>
+                                                <option value="medium">中期</option>
+                                                <option value="long">長期</option>
                                             </select>
                                         </td>
                                         <td className="px-3 py-2">
@@ -987,7 +1098,25 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
-                                <div className="grid grid-cols-4 gap-2 text-sm">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-sm">
+                                    <div>
+                                        <label htmlFor={`event-category-${event.id}`} className="text-xs text-gray-400">カテゴリ</label>
+                                        <select
+                                            id={`event-category-${event.id}`}
+                                            className="w-full border-gray-200 rounded mt-1 text-xs"
+                                            value={event.category}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                events: d.events.map(ev => ev.id === event.id ? { ...ev, category: e.target.value as any } : ev)
+                                            }))}
+                                        >
+                                            <option value="future_plan">将来プラン</option>
+                                            <option value="irregular">不定期支出</option>
+                                            <option value="education_fund">学資・満期金</option>
+                                            <option value="surrender_value">解約返戻金</option>
+                                            <option value="other">その他</option>
+                                        </select>
+                                    </div>
                                     <div>
                                         <label htmlFor={`event-amount-${event.id}`} className="text-xs text-gray-400">金額(万円)</label>
                                         <input
@@ -1019,6 +1148,24 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         />
                                     </div>
                                     <div>
+                                        <label htmlFor={`event-end-age-${event.id}`} className="text-xs text-gray-400">終了年齢</label>
+                                        <input
+                                            id={`event-end-age-${event.id}`}
+                                            type="number"
+                                            className="w-full border-gray-200 rounded mt-1"
+                                            name={`event-end-age-${event.id}`}
+                                            autoComplete="off"
+                                            value={event.endAge ?? ''}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                events: d.events.map(ev => ev.id === event.id ? {
+                                                    ...ev,
+                                                    endAge: e.target.value === '' ? undefined : Number(e.target.value)
+                                                } : ev)
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
                                         <label htmlFor={`event-type-${event.id}`} className="text-xs text-gray-400">タイプ</label>
                                         <select
                                             id={`event-type-${event.id}`}
@@ -1031,6 +1178,25 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         >
                                             <option value="one_time">一回限り</option>
                                             <option value="periodic">定期</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor={`event-rate-category-${event.id}`} className="text-xs text-gray-400">増減率カテゴリ</label>
+                                        <select
+                                            id={`event-rate-category-${event.id}`}
+                                            className="w-full border-gray-200 rounded mt-1 text-xs"
+                                            value={event.rateCategory}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                events: d.events.map(ev => ev.id === event.id ? { ...ev, rateCategory: e.target.value as any } : ev)
+                                            }))}
+                                        >
+                                            <option value="none">固定(変動なし)</option>
+                                            <option value="other">その他支出率</option>
+                                            <option value="inflation">インフレ率</option>
+                                            <option value="living">生活費率</option>
+                                            <option value="fixed">固定費率</option>
+                                            <option value="education">教育費率</option>
                                         </select>
                                     </div>
                                     {event.type === 'periodic' && (
@@ -1105,7 +1271,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
-                                <div className="grid grid-cols-4 gap-2 text-sm">
+                                <div className="grid grid-cols-5 gap-2 text-sm">
                                     <div>
                                         <label htmlFor={`contrib-asset-${contrib.id}`} className="text-xs text-gray-400">対象資産</label>
                                         <select
@@ -1137,6 +1303,21 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, amount: Number(e.target.value) } : c)
                                             }))}
                                         />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={`contrib-frequency-${contrib.id}`} className="text-xs text-gray-400">頻度</label>
+                                        <select
+                                            id={`contrib-frequency-${contrib.id}`}
+                                            className="w-full border-gray-200 rounded mt-1 text-xs"
+                                            value={contrib.frequency}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, frequency: e.target.value as 'monthly' | 'yearly' } : c)
+                                            }))}
+                                        >
+                                            <option value="monthly">毎月</option>
+                                            <option value="yearly">毎年</option>
+                                        </select>
                                     </div>
                                     <div>
                                         <label htmlFor={`contrib-start-age-${contrib.id}`} className="text-xs text-gray-400">開始年齢</label>
@@ -1214,14 +1395,15 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                 <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex flex-col">
-                            <h3 className="text-lg font-display font-bold text-slate-800">個人固定費</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Personal Fixed Costs</p>
+                            <h3 className="text-lg font-display font-bold text-slate-800">固定費（個人・家族共通）</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fixed Costs (Personal / Family)</p>
                         </div>
                         <button
                             onClick={() => updateData(d => ({
                                 ...d,
                                 personalFixedCosts: [...d.personalFixedCosts, {
                                     id: `pf${Date.now()}`,
+                                    target: 'person' as const,
                                     personId: d.people[0]?.id || 'p1',
                                     name: '新規固定費',
                                     amount: 0,
@@ -1236,12 +1418,15 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                     </div>
                     <div className="space-y-2">
                         {data.personalFixedCosts.map((cost) => {
+                            const target = cost.target || 'person';
                             const person = data.people.find(p => p.id === cost.personId);
                             return (
                                 <div key={cost.id} className="bg-white p-3 rounded-lg border shadow-sm">
                                     <div className="flex justify-between items-center mb-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">{person?.name}</span>
+                                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                                {target === 'family' ? '家族共通' : (person?.name || '対象者未設定')}
+                                            </span>
                                             <input
                                                 className="font-medium text-gray-800 border-none p-0"
                                                 aria-label="個人固定費名"
@@ -1262,7 +1447,43 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                                        <div>
+                                            <label htmlFor={`personal-cost-target-${cost.id}`} className="text-xs text-gray-400">対象</label>
+                                            <select
+                                                id={`personal-cost-target-${cost.id}`}
+                                                className="w-full border-gray-200 rounded mt-1 text-xs"
+                                                value={target}
+                                                onChange={(e) => updateData(d => ({
+                                                    ...d,
+                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? {
+                                                        ...c,
+                                                        target: e.target.value as 'person' | 'family',
+                                                        personId: e.target.value === 'family' ? c.personId : (c.personId || d.people[0]?.id || 'p1')
+                                                    } : c)
+                                                }))}
+                                            >
+                                                <option value="person">個人</option>
+                                                <option value="family">家族共通</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor={`personal-cost-person-${cost.id}`} className="text-xs text-gray-400">対象者</label>
+                                            <select
+                                                id={`personal-cost-person-${cost.id}`}
+                                                className="w-full border-gray-200 rounded mt-1 text-xs"
+                                                value={cost.personId || ''}
+                                                disabled={target === 'family'}
+                                                onChange={(e) => updateData(d => ({
+                                                    ...d,
+                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? { ...c, personId: e.target.value } : c)
+                                                }))}
+                                            >
+                                                {data.people.map((p) => (
+                                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                         <div>
                                             <label htmlFor={`personal-cost-amount-${cost.id}`} className="text-xs text-gray-400">月額(万円)</label>
                                             <input
@@ -1369,6 +1590,48 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     }))}
                                 />
                             </div>
+                            <div>
+                                <label htmlFor="settings-transfer-age-investment" className="text-xs text-gray-400 block mb-1">投資移管年齢</label>
+                                <input
+                                    id="settings-transfer-age-investment"
+                                    type="number"
+                                    className="w-full text-sm border-gray-200 rounded"
+                                    name="settings-transfer-age-investment"
+                                    autoComplete="off"
+                                    value={data.settings.assetTransferAges?.investment ?? 65}
+                                    onChange={(e) => updateData(d => ({
+                                        ...d,
+                                        settings: {
+                                            ...d.settings,
+                                            assetTransferAges: {
+                                                ...(d.settings.assetTransferAges || {}),
+                                                investment: Number(e.target.value)
+                                            }
+                                        }
+                                    }))}
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="settings-transfer-age-dc" className="text-xs text-gray-400 block mb-1">DC移管年齢</label>
+                                <input
+                                    id="settings-transfer-age-dc"
+                                    type="number"
+                                    className="w-full text-sm border-gray-200 rounded"
+                                    name="settings-transfer-age-dc"
+                                    autoComplete="off"
+                                    value={data.settings.assetTransferAges?.dc ?? 65}
+                                    onChange={(e) => updateData(d => ({
+                                        ...d,
+                                        settings: {
+                                            ...d.settings,
+                                            assetTransferAges: {
+                                                ...(d.settings.assetTransferAges || {}),
+                                                dc: Number(e.target.value)
+                                            }
+                                        }
+                                    }))}
+                                />
+                            </div>
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 block mb-2">インフレ率設定</label>
@@ -1421,6 +1684,30 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         }))}
                                     />
                                 </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-2">Glip互換</label>
+                            <div className="space-y-2">
+                                <label htmlFor="settings-glip-include-transfer-income" className="flex items-center gap-2 text-xs text-gray-600">
+                                    <input
+                                        id="settings-glip-include-transfer-income"
+                                        type="checkbox"
+                                        name="settings-glip-include-transfer-income"
+                                        checked={data.settings.glipCompatibility?.includeTransfersInIncomeTotal === true}
+                                        onChange={(e) => updateData(d => ({
+                                            ...d,
+                                            settings: {
+                                                ...d.settings,
+                                                glipCompatibility: {
+                                                    ...(d.settings.glipCompatibility || {}),
+                                                    includeTransfersInIncomeTotal: e.target.checked
+                                                }
+                                            }
+                                        }))}
+                                    />
+                                    移管額を収入計に含める
+                                </label>
                             </div>
                         </div>
                         <div>

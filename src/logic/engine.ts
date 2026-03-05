@@ -136,6 +136,15 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
 
     // Clone initial assets to track balances
     const currentAssets = assets.map(a => ({ ...a, balance: a.initialAmount }));
+    const transferAges = {
+        investment: data.settings.assetTransferAges?.investment ?? 65,
+        dc: data.settings.assetTransferAges?.dc ?? 65,
+    };
+    const includeTransfersInIncomeTotal = data.settings.glipCompatibility?.includeTransfersInIncomeTotal === true;
+    const transferredByType: Record<'investment' | 'dc', boolean> = {
+        investment: false,
+        dc: false,
+    };
 
     // --- Pre-calculation for Housing Loan with Variable Rates ---
     const loanRepaymentsByAge: Record<number, number> = {};
@@ -454,16 +463,22 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         // 3. Personal Fixed (Insurance is often here)
         const fixedRate = getRate(settings.rates, 'fixed');
         personalFixedCosts.forEach(pfc => {
-            const person = people.find(p => p.id === pfc.personId);
-            if (isDead && person?.relation === 'self') return;
+            const target = pfc.target || 'person';
+            const person = pfc.personId ? people.find(p => p.id === pfc.personId) : undefined;
+            if (target === 'person' && !person) return;
+            if (target === 'person' && isDead && person?.relation === 'self') return;
 
-            const personAge = age - (person ? (person.birthYear - self.birthYear) : 0);
-            if (pfc.startAge && personAge < pfc.startAge) return;
-            if (pfc.endAge && personAge > pfc.endAge) return;
+            const targetAge = target === 'family'
+                ? age
+                : age - (person ? (person.birthYear - self.birthYear) : 0);
+            if (pfc.startAge && targetAge < pfc.startAge) return;
+            if (pfc.endAge && targetAge > pfc.endAge) return;
 
             const cost = applyAnnualRate(pfc.amount * 12, fixedRate, yearIndex);
             if (pfc.name.includes('保険')) {
                 expense.insurance += cost;
+            } else if (target === 'family') {
+                expense.familySpecific += cost;
             } else if (person?.relation === 'self') {
                 expense.selfSpecific += cost;
             } else if (person?.relation === 'spouse') {
@@ -492,6 +507,9 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 const eventRate = getRate(settings.rates, evt.rateCategory);
                 const amt = applyAnnualRate(evt.amount, eventRate, yearIndex);
                 if (evt.category === 'future_plan') {
+                    expense.futurePlan += amt;
+                } else if (evt.category === 'other') {
+                    // "other" life events (travel, car replacement, etc.) are treated as planned spending.
                     expense.futurePlan += amt;
                 } else if (evt.category === 'irregular') {
                     irregularExpense += amt;
@@ -523,7 +541,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         // --- Assets Management ---
         const yearContributions: Record<string, number> = {};
         contributions.forEach(c => {
-            if (age >= c.startAge && age < c.endAge) {
+            if (age >= c.startAge && age <= c.endAge) {
                 const annualAmount = (c.amount * (c.frequency === 'monthly' ? 12 : 1));
                 const asset = currentAssets.find(a => a.id === c.assetId);
                 const amount = policyEnabled
@@ -591,10 +609,13 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             }
         }
 
-        // Asset Transfer Logic
-        if (age === 65) {
-            const transferAssets = currentAssets.filter(a => a.type === 'dc' || a.type === 'investment');
-            if (cashAsset) {
+        // Asset Transfer Logic (type-specific transfer age, one-time per type).
+        if (cashAsset) {
+            (['investment', 'dc'] as const).forEach((type) => {
+                if (transferredByType[type]) return;
+                if (age < transferAges[type]) return;
+
+                const transferAssets = currentAssets.filter(a => a.type === type);
                 transferAssets.forEach(ta => {
                     const amount = ta.balance;
                     if (amount > 0) {
@@ -604,7 +625,8 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                         financing.assetTransfer += amount;
                     }
                 });
-            }
+                transferredByType[type] = true;
+            });
         }
 
         financing.total = financing.assetLiquidation + financing.assetTransfer;
@@ -620,8 +642,8 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             else if (term === 'long') longTerm += a.balance;
         });
 
-        // Keep income.total aligned with the same income base used for recurring balance.
-        income.total = totalIncome;
+        // Compatibility mode can optionally add transfer amount to displayed income total.
+        income.total = totalIncome + (includeTransfersInIncomeTotal ? financing.assetTransfer : 0);
         const oneTimeIncome = educationFundMaturity + surrenderValueReceived;
         const oneTimeExpense = irregularExpense;
 

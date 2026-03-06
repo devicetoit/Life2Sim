@@ -5,7 +5,53 @@
   "health_insurance": {
     "default_region": "tokyo",
     "rates_by_region": {
-      "tokyo": 0.0991
+      "hokkaido": 0.1031,
+      "aomori": 0.0985,
+      "iwate": 0.0962,
+      "miyagi": 0.1011,
+      "akita": 0.1001,
+      "yamagata": 0.0975,
+      "fukushima": 0.0962,
+      "ibaraki": 0.0967,
+      "tochigi": 0.0982,
+      "gunma": 0.0977,
+      "saitama": 0.0976,
+      "chiba": 0.0979,
+      "tokyo": 0.0991,
+      "kanagawa": 0.0992,
+      "niigata": 0.0955,
+      "toyama": 0.0965,
+      "ishikawa": 0.0988,
+      "fukui": 0.0994,
+      "yamanashi": 0.0989,
+      "nagano": 0.0969,
+      "gifu": 0.0993,
+      "shizuoka": 0.098,
+      "aichi": 0.1003,
+      "mie": 0.0999,
+      "shiga": 0.0997,
+      "kyoto": 0.1003,
+      "osaka": 0.1024,
+      "hyogo": 0.1016,
+      "nara": 0.1002,
+      "wakayama": 0.1019,
+      "tottori": 0.0993,
+      "shimane": 0.0994,
+      "okayama": 0.1017,
+      "hiroshima": 0.0997,
+      "yamaguchi": 0.1036,
+      "tokushima": 0.1047,
+      "kagawa": 0.1021,
+      "ehime": 0.1018,
+      "kochi": 0.1013,
+      "fukuoka": 0.1031,
+      "saga": 0.1078,
+      "nagasaki": 0.1041,
+      "kumamoto": 0.1012,
+      "oita": 0.1025,
+      "miyazaki": 0.1009,
+      "kagoshima": 0.1031,
+      "okinawa": 0.0944
     },
     "employee_share_ratio": 0.5,
     "standard_monthly_remuneration": {
@@ -42,6 +88,16 @@
         "total_rate": 0.0145,
         "employee_rate": 0.0055,
         "employer_rate": 0.009
+      },
+      "agriculture_forestry_fisheries_sake": {
+        "total_rate": 0.0165,
+        "employee_rate": 0.0065,
+        "employer_rate": 0.01
+      },
+      "construction": {
+        "total_rate": 0.0175,
+        "employee_rate": 0.0065,
+        "employer_rate": 0.011
       }
     }
   },

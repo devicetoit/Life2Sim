@@ -37,11 +37,14 @@ export const normalizeProjectData = (data: ProjectData): ProjectData => {
             },
             glipCompatibility: {
                 includeTransfersInIncomeTotal: withPolicy.settings.glipCompatibility?.includeTransfersInIncomeTotal === true
+            },
+            retirementWithdrawalStrategy: {
+                enabled: withPolicy.settings.retirementWithdrawalStrategy?.enabled === true,
+                startAge: Math.floor(toFiniteNumber(withPolicy.settings.retirementWithdrawalStrategy?.startAge, 65))
             }
         },
         incomes: withPolicy.incomes.map((inc) => {
             const category = incomeCategories.has(inc.category) ? inc.category : 'other';
-            const taxRate = toFiniteNumber(inc.taxRate, 0.8);
             const annualGrowthRate = (inc.annualGrowthRate === undefined || inc.annualGrowthRate === null)
                 ? undefined
                 : toFiniteNumber(inc.annualGrowthRate, 0);
@@ -58,7 +61,6 @@ export const normalizeProjectData = (data: ProjectData): ProjectData => {
             return {
                 ...inc,
                 category,
-                taxRate,
                 annualGrowthRate,
                 peakAmount,
                 peakAge,

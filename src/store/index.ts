@@ -30,7 +30,6 @@ export const useStore = create<AppState>((set, get) => ({
     updateData: (updater) => {
         const newData = updater(get().data);
         set({ data: newData });
-        get().recalc();
     },
 
     recalc: () => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { AnnualResult, Asset } from '../../types';
 import { formatAmount } from '../../lib/format';
@@ -9,6 +9,17 @@ interface Props {
 }
 
 export const AssetChart: React.FC<Props> = ({ results, assets }) => {
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const update = () => setPrefersReducedMotion(mediaQuery.matches);
+        update();
+        mediaQuery.addEventListener('change', update);
+        return () => mediaQuery.removeEventListener('change', update);
+    }, []);
+
     if (!results.length) return null;
 
     // Create a mapping of id to name
@@ -50,16 +61,15 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
         <div className="h-96 w-full bg-white p-2 rounded-lg">
             <h3 className="text-lg font-semibold mb-4">貯金の増えかた (合計)</h3>
             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 52, right: 30, left: 40, bottom: 20 }}>
+                <AreaChart data={data} margin={{ top: 10, right: 30, left: 56, bottom: 12 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                         dataKey="age"
                         type="number"
                         ticks={xTicks}
                         domain={[minAge, maxAge]}
-                        label={{ value: '年齢', position: 'insideBottomRight', offset: -5 }}
                     />
-                    <YAxis label={{ value: '万円', angle: -90, position: 'insideLeft' }} />
+                    <YAxis width={88} />
                     <Tooltip formatter={(value: number) => `${formatAmount(value)}万円`} />
                     <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8 }} />
                     {keys.map((key, index) => (
@@ -71,6 +81,7 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
                             stroke={palette[index % palette.length]}
                             fill={palette[index % palette.length]}
                             name={assetMap[key] || key}
+                            isAnimationActive={!prefersReducedMotion}
                         />
                     ))}
                 </AreaChart>

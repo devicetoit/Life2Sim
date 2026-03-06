@@ -67,3 +67,15 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* DataEditor: hide native number input spinners for direct typing UX */
+.data-editor input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.data-editor input[type="number"]::-webkit-outer-spin-button,
+.data-editor input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

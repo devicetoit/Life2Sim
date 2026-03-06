@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceArea } from 'recharts';
 import { AnnualResult } from '../../types';
 import { formatAmount } from '../../lib/format';
@@ -12,6 +12,16 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
     const [right, setRight] = useState<number | 'dataMax'>('dataMax');
     const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null);
     const [refAreaRight, setRefAreaRight] = useState<number | null>(null);
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const update = () => setPrefersReducedMotion(mediaQuery.matches);
+        update();
+        mediaQuery.addEventListener('change', update);
+        return () => mediaQuery.removeEventListener('change', update);
+    }, []);
 
     if (!results.length) return null;
 
@@ -113,7 +123,7 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
                     {(left !== 'dataMin' || right !== 'dataMax') && (
                         <button
                             onClick={zoomOut}
-                            className="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold px-3 py-1 rounded hover:bg-indigo-100 hover:border-indigo-300 transition-colors shadow-sm"
+                            className="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold px-3 py-1 rounded hover:bg-indigo-100 hover:border-indigo-300 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                         >
                             全体表示に戻す (ズームアウト)
                         </button>
@@ -146,14 +156,14 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
                     <Tooltip
                         active={refAreaLeft === null ? undefined : false}
                         formatter={(value: number) => `${formatAmount(value)}万円`}
-                        animationDuration={1000}
+                        animationDuration={prefersReducedMotion ? 0 : 1000}
                     />
                     <Legend />
                     {expenseConfigs.map(cfg => (
-                        <Bar key={cfg.key} dataKey={cfg.key} name={cfg.name} stackId="a" fill={cfg.color} />
+                        <Bar key={cfg.key} dataKey={cfg.key} name={cfg.name} stackId="a" fill={cfg.color} isAnimationActive={!prefersReducedMotion} />
                     ))}
-                    <Line type="monotone" dataKey="income" name="経常収入" stroke="#ef4444" strokeWidth={3} dot={false} />
-                    <Line type="monotone" dataKey="balance" name="手元に残るお金" stroke="#000" strokeWidth={1} strokeDasharray="5 5" dot={false} />
+                    <Line type="monotone" dataKey="income" name="経常収入" stroke="#ef4444" strokeWidth={3} dot={false} isAnimationActive={!prefersReducedMotion} />
+                    <Line type="monotone" dataKey="balance" name="手元に残るお金" stroke="#000" strokeWidth={1} strokeDasharray="5 5" dot={false} isAnimationActive={!prefersReducedMotion} />
 
                     {refAreaLeft !== null && refAreaRight !== null ? (
                         <ReferenceArea

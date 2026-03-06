@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper } from '@tanstack/react-table';
 import { AnnualResult } from '../../types';
 import { Download } from 'lucide-react';
@@ -10,6 +10,10 @@ interface Props {
 
 export const AnnualTable: React.FC<Props> = ({ results }) => {
     const columnHelper = createColumnHelper<AnnualResult>();
+    const [scrollTop, setScrollTop] = useState(0);
+    const [viewportHeight, setViewportHeight] = useState(600);
+    const ROW_HEIGHT = 31;
+    const OVERSCAN = 8;
 
     const columns = useMemo(() => [
         columnHelper.group({
@@ -106,6 +110,15 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
         columns,
         getCoreRowModel: getCoreRowModel(),
     });
+    const rows = table.getRowModel().rows;
+    const totalRows = rows.length;
+    const visibleLeafColumns = table.getVisibleLeafColumns().length;
+    const visibleCount = Math.ceil(viewportHeight / ROW_HEIGHT) + OVERSCAN * 2;
+    const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+    const endIndex = Math.min(totalRows, startIndex + visibleCount);
+    const visibleRows = rows.slice(startIndex, endIndex);
+    const paddingTop = startIndex * ROW_HEIGHT;
+    const paddingBottom = Math.max(0, (totalRows - endIndex) * ROW_HEIGHT);
 
     const handleExportCSV = () => {
         // Flatten headers
@@ -167,12 +180,21 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                 <h3 className="font-bold text-gray-700">生涯収支・資産詳細</h3>
                 <button
                     onClick={handleExportCSV}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded text-sm text-gray-700 shadow-sm transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded text-sm text-gray-700 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >
                     <Download size={16} /> CSV出力
                 </button>
             </div>
-            <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+            <div
+                className="overflow-x-auto overflow-y-auto max-h-[600px]"
+                onScroll={(e) => {
+                    const el = e.currentTarget;
+                    setScrollTop(el.scrollTop);
+                    if (el.clientHeight !== viewportHeight) {
+                        setViewportHeight(el.clientHeight);
+                    }
+                }}
+            >
                 <table className="min-w-full text-[11px] border-collapse">
                     <thead className="bg-gray-100 sticky top-0 z-10">
                         {table.getHeaderGroups().map(headerGroup => (
@@ -190,7 +212,12 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                         ))}
                     </thead>
                     <tbody>
-                        {table.getRowModel().rows.map(row => (
+                        {paddingTop > 0 && (
+                            <tr>
+                                <td colSpan={visibleLeafColumns} style={{ height: `${paddingTop}px`, padding: 0, border: 0 }} />
+                            </tr>
+                        )}
+                        {visibleRows.map(row => (
                             <tr key={row.id} className="hover:bg-indigo-50/30 transition-colors">
                                 {row.getVisibleCells().map(cell => (
                                     <td key={cell.id} className="px-2 py-1 border border-gray-100 text-right whitespace-nowrap">
@@ -199,6 +226,11 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                                 ))}
                             </tr>
                         ))}
+                        {paddingBottom > 0 && (
+                            <tr>
+                                <td colSpan={visibleLeafColumns} style={{ height: `${paddingBottom}px`, padding: 0, border: 0 }} />
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

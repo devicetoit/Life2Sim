@@ -20,8 +20,61 @@ interface DataEditorProps {
     isSidebar?: boolean;
 }
 
+const HEALTH_INSURANCE_REGION_OPTIONS: Array<{ value: string; label: string }> = [
+    { value: 'hokkaido', label: '北海道（協会けんぽ）' },
+    { value: 'aomori', label: '青森（協会けんぽ）' },
+    { value: 'iwate', label: '岩手（協会けんぽ）' },
+    { value: 'miyagi', label: '宮城（協会けんぽ）' },
+    { value: 'akita', label: '秋田（協会けんぽ）' },
+    { value: 'yamagata', label: '山形（協会けんぽ）' },
+    { value: 'fukushima', label: '福島（協会けんぽ）' },
+    { value: 'ibaraki', label: '茨城（協会けんぽ）' },
+    { value: 'tochigi', label: '栃木（協会けんぽ）' },
+    { value: 'gunma', label: '群馬（協会けんぽ）' },
+    { value: 'saitama', label: '埼玉（協会けんぽ）' },
+    { value: 'chiba', label: '千葉（協会けんぽ）' },
+    { value: 'tokyo', label: '東京（協会けんぽ）' },
+    { value: 'kanagawa', label: '神奈川（協会けんぽ）' },
+    { value: 'niigata', label: '新潟（協会けんぽ）' },
+    { value: 'toyama', label: '富山（協会けんぽ）' },
+    { value: 'ishikawa', label: '石川（協会けんぽ）' },
+    { value: 'fukui', label: '福井（協会けんぽ）' },
+    { value: 'yamanashi', label: '山梨（協会けんぽ）' },
+    { value: 'nagano', label: '長野（協会けんぽ）' },
+    { value: 'gifu', label: '岐阜（協会けんぽ）' },
+    { value: 'shizuoka', label: '静岡（協会けんぽ）' },
+    { value: 'aichi', label: '愛知（協会けんぽ）' },
+    { value: 'mie', label: '三重（協会けんぽ）' },
+    { value: 'shiga', label: '滋賀（協会けんぽ）' },
+    { value: 'kyoto', label: '京都（協会けんぽ）' },
+    { value: 'osaka', label: '大阪（協会けんぽ）' },
+    { value: 'hyogo', label: '兵庫（協会けんぽ）' },
+    { value: 'nara', label: '奈良（協会けんぽ）' },
+    { value: 'wakayama', label: '和歌山（協会けんぽ）' },
+    { value: 'tottori', label: '鳥取（協会けんぽ）' },
+    { value: 'shimane', label: '島根（協会けんぽ）' },
+    { value: 'okayama', label: '岡山（協会けんぽ）' },
+    { value: 'hiroshima', label: '広島（協会けんぽ）' },
+    { value: 'yamaguchi', label: '山口（協会けんぽ）' },
+    { value: 'tokushima', label: '徳島（協会けんぽ）' },
+    { value: 'kagawa', label: '香川（協会けんぽ）' },
+    { value: 'ehime', label: '愛媛（協会けんぽ）' },
+    { value: 'kochi', label: '高知（協会けんぽ）' },
+    { value: 'fukuoka', label: '福岡（協会けんぽ）' },
+    { value: 'saga', label: '佐賀（協会けんぽ）' },
+    { value: 'nagasaki', label: '長崎（協会けんぽ）' },
+    { value: 'kumamoto', label: '熊本（協会けんぽ）' },
+    { value: 'oita', label: '大分（協会けんぽ）' },
+    { value: 'miyazaki', label: '宮崎（協会けんぽ）' },
+    { value: 'kagoshima', label: '鹿児島（協会けんぽ）' },
+    { value: 'okinawa', label: '沖縄（協会けんぽ）' }
+];
+
 export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => {
-    const { data, updateData, importData } = useStore();
+    const data = useStore((state) => state.data);
+    const updateData = useStore((state) => state.updateData);
+    const importData = useStore((state) => state.importData);
+    const recalc = useStore((state) => state.recalc);
     const [isOpen, setIsOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -81,6 +134,26 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         }
     }, [handleFileImport]);
 
+    const handleEditorBlurCapture = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
+            recalc();
+        }
+    }, [recalc]);
+
+    const handleEditorKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key !== 'Enter') return;
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        if (target.tagName === 'TEXTAREA') return;
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT') {
+            recalc();
+        }
+    }, [recalc]);
+
     const exportJSON = () => {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -90,28 +163,70 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         a.click();
     };
 
-    const exportCSV = () => {
-        // Simple CSV export for summary or results? 
-        // User asked for "Parameters" in CSV. Let's do a basic one for Incomes/Assets.
-        let csv = "Category,Name,Amount/Value,Start,End\n";
-        data.incomes.forEach(inc => {
-            csv += `Income,${inc.name},${inc.amount},${inc.startAge},${inc.endAge}\n`;
-        });
-        data.assets.forEach(a => {
-            csv += `Asset,${a.name},${a.initialAmount},${a.rate}%,-\n`;
-        });
+    const exportText = () => {
+        const lines: string[] = [];
+        lines.push(`Life2Sim 設定エクスポート`);
+        lines.push(`出力日: ${new Date().toISOString()}`);
+        lines.push('');
 
-        const blob = new Blob([csv], { type: 'text/csv' });
+        lines.push('[People]');
+        lines.push('id\tname\trelation\tbirthYear\tsex');
+        data.people.forEach(p => lines.push(`${p.id}\t${p.name}\t${p.relation}\t${p.birthYear}\t${p.sex}`));
+        lines.push('');
+
+        lines.push('[Incomes]');
+        lines.push('id\tpersonId\tname\tcategory\tamount\tstartAge\tendAge\tannualGrowthRate\tpeakAmount\tpeakAge\tannualDecayRate');
+        data.incomes.forEach(i => lines.push(`${i.id}\t${i.personId}\t${i.name}\t${i.category}\t${i.amount}\t${i.startAge}\t${i.endAge}\t${i.annualGrowthRate ?? ''}\t${i.peakAmount ?? ''}\t${i.peakAge ?? ''}\t${i.annualDecayRate ?? ''}`));
+        lines.push('');
+
+        lines.push('[Assets]');
+        lines.push('id\tname\ttype\tterm\tinitialAmount\trate');
+        data.assets.forEach(a => lines.push(`${a.id}\t${a.name}\t${a.type}\t${a.term}\t${a.initialAmount}\t${a.rate}`));
+        lines.push('');
+
+        lines.push('[Contributions]');
+        lines.push('id\tname\tassetId\tamount\tfrequency\tstartAge\tendAge\ttargetAssetIdAfterEnd');
+        data.contributions.forEach(c => lines.push(`${c.id}\t${c.name}\t${c.assetId}\t${c.amount}\t${c.frequency}\t${c.startAge}\t${c.endAge}\t${c.targetAssetIdAfterEnd ?? ''}`));
+        lines.push('');
+
+        lines.push('[LivingCostSteps]');
+        lines.push('id\tstartAge\tfood\tcommunication\tdailyGoods\tutilities\thousing\thobby\tother');
+        data.livingCostSteps.forEach(s => lines.push(`${s.id}\t${s.startAge}\t${s.breakdown.food}\t${s.breakdown.communication}\t${s.breakdown.dailyGoods}\t${s.breakdown.utilities}\t${s.breakdown.housing ?? 0}\t${s.breakdown.hobby}\t${s.breakdown.other}`));
+        lines.push('');
+
+        lines.push('[Events]');
+        lines.push('id\tname\tcategory\tamount\ttype\tstartAge\tendAge\tinterval\trateCategory');
+        data.events.forEach(e => lines.push(`${e.id}\t${e.name}\t${e.category}\t${e.amount}\t${e.type}\t${e.startAge}\t${e.endAge ?? ''}\t${e.interval ?? ''}\t${e.rateCategory}`));
+        lines.push('');
+
+        lines.push('[EducationPlans]');
+        lines.push('childId\ttemplateName\ttotalAmountOverride');
+        data.educationPlans.forEach(p => lines.push(`${p.childId}\t${p.templateName ?? ''}\t${p.totalAmountOverride ?? ''}`));
+        lines.push('');
+
+        lines.push('[Housing]');
+        lines.push(JSON.stringify(data.housing, null, 2));
+        lines.push('');
+
+        lines.push('[PersonalFixedCosts]');
+        lines.push('id\ttarget\tpersonId\tname\tamount\tstartAge\tendAge');
+        data.personalFixedCosts.forEach(p => lines.push(`${p.id}\t${p.target ?? 'person'}\t${p.personId ?? ''}\t${p.name}\t${p.amount}\t${p.startAge ?? ''}\t${p.endAge ?? ''}`));
+        lines.push('');
+
+        lines.push('[Settings]');
+        lines.push(JSON.stringify(data.settings, null, 2));
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `life-plan-params.csv`;
+        a.download = `life-plan-params-${new Date().toISOString().split('T')[0]}.txt`;
         a.click();
     };
 
-    const importSection = (
+    const ioSection = (
         <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60 ring-1 ring-indigo-50/80">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">設定の読込 (JSON)</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">データ入出力</h3>
             <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -143,6 +258,14 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                 >
                     <Upload size={14} aria-hidden="true" />
                     ファイル選択
+                </button>
+            </div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button onClick={exportJSON} className="flex items-center justify-center gap-2 p-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors">
+                    <Download size={16} /> JSONで保存
+                </button>
+                <button onClick={exportText} className="flex items-center justify-center gap-2 p-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors">
+                    <Download size={16} /> TXTで書き出し
                 </button>
             </div>
             {importStatus && (
@@ -177,7 +300,11 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
     }
 
     const editorContent = (
-        <div className={`${isSidebar ? 'w-full h-full' : 'w-full max-w-2xl h-full shadow-2xl'} bg-slate-50 flex flex-col font-sans`}>
+        <div
+            className={`${isSidebar ? 'w-full h-full min-h-0' : 'w-full max-w-2xl h-full shadow-2xl'} data-editor bg-slate-50 flex flex-col font-sans`}
+            onBlurCapture={handleEditorBlurCapture}
+            onKeyDownCapture={handleEditorKeyDownCapture}
+        >
             <header className="p-6 bg-white border-b border-slate-200/60 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     <div className="bg-indigo-50 p-2 rounded-lg">
@@ -194,21 +321,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                 )}
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-10">
-                {importSection}
-
-                {/* Export Section */}
-                <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60 transition-colors hover:border-indigo-100">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-5">保存と書き出し</h3>
-                    <div className="flex gap-4">
-                        <button onClick={exportJSON} className="flex-1 flex items-center justify-center gap-2 p-2 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors">
-                            <Download size={16} /> JSONで保存
-                        </button>
-                        <button onClick={exportCSV} className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors">
-                            <Download size={16} /> CSVで書き出し
-                        </button>
-                    </div>
-                </section>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-8 pb-10">
+                {ioSection}
 
                 <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
                     <div className="flex justify-between items-center mb-6">
@@ -329,8 +443,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     category: 'salary' as const,
                                     amount: 0,
                                     startAge: 40,
-                                    endAge: 65,
-                                    taxRate: 0.8
+                                    endAge: 65
                                 }]
                             }))}
                             className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded hover:bg-indigo-200"
@@ -456,23 +569,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         </tr>
                                         <tr className="bg-gray-50/40">
                                             <td colSpan={7} className="px-3 py-2">
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
-                                                    <div>
-                                                        <label htmlFor={`income-tax-rate-${inc.id}`} className="text-gray-500">手取り率</label>
-                                                        <input
-                                                            id={`income-tax-rate-${inc.id}`}
-                                                            type="number"
-                                                            step="0.01"
-                                                            min="0"
-                                                            max="1"
-                                                            className="w-full border-gray-200 rounded mt-1"
-                                                            value={inc.taxRate}
-                                                            onChange={(e) => updateData(d => ({
-                                                                ...d,
-                                                                incomes: d.incomes.map(i => i.id === inc.id ? { ...i, taxRate: Number(e.target.value) } : i)
-                                                            }))}
-                                                        />
-                                                    </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
                                                     <div>
                                                         <label htmlFor={`income-growth-rate-${inc.id}`} className="text-gray-500">年成長率</label>
                                                         <input
@@ -1711,27 +1808,55 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             </div>
                         </div>
                         <div>
-                            <label className="text-xs text-gray-400 block mb-2">制度ルール設定</label>
-                            <div className="space-y-3">
-                                <label htmlFor="settings-policy-enabled" className="flex items-center gap-2 text-xs text-gray-600">
+                            <label className="text-xs text-gray-400 block mb-2">老後の取り崩し設定</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <label htmlFor="settings-retirement-withdrawal-enabled" className="flex items-center gap-2 text-xs text-gray-600">
                                     <input
-                                        id="settings-policy-enabled"
+                                        id="settings-retirement-withdrawal-enabled"
                                         type="checkbox"
-                                        name="settings-policy-enabled"
-                                        checked={data.settings.policy?.enabled !== false}
+                                        name="settings-retirement-withdrawal-enabled"
+                                        checked={data.settings.retirementWithdrawalStrategy?.enabled === true}
                                         onChange={(e) => updateData(d => ({
                                             ...d,
                                             settings: {
                                                 ...d.settings,
-                                                policy: {
-                                                    ...d.settings.policy,
-                                                    enabled: e.target.checked
+                                                retirementWithdrawalStrategy: {
+                                                    ...(d.settings.retirementWithdrawalStrategy || {}),
+                                                    enabled: e.target.checked,
+                                                    startAge: d.settings.retirementWithdrawalStrategy?.startAge ?? 65
                                                 }
                                             }
                                         }))}
                                     />
-                                    税・社保・年金の制度ルールを適用
+                                    現金不足分を投資信託から補う
                                 </label>
+                                <div>
+                                    <label htmlFor="settings-retirement-withdrawal-start-age" className="text-xs text-gray-500">開始年齢</label>
+                                    <input
+                                        id="settings-retirement-withdrawal-start-age"
+                                        type="number"
+                                        className="w-full text-sm border-gray-200 rounded mt-1"
+                                        name="settings-retirement-withdrawal-start-age"
+                                        value={data.settings.retirementWithdrawalStrategy?.startAge ?? 65}
+                                        onChange={(e) => updateData(d => ({
+                                            ...d,
+                                            settings: {
+                                                ...d.settings,
+                                                retirementWithdrawalStrategy: {
+                                                    ...(d.settings.retirementWithdrawalStrategy || {}),
+                                                    enabled: d.settings.retirementWithdrawalStrategy?.enabled === true,
+                                                    startAge: Number(e.target.value)
+                                                }
+                                            }
+                                        }))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-2">制度ルール設定</label>
+                            <div className="space-y-3">
+                                <p className="text-xs text-gray-600">税・社保・年金の制度ルールは常時適用されます。</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label htmlFor="settings-policy-region" className="text-xs text-gray-500">健康保険料率地域</label>
@@ -1751,7 +1876,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 }
                                             }))}
                                         >
-                                            <option value="tokyo">東京（協会けんぽ）</option>
+                                            {HEALTH_INSURANCE_REGION_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>
@@ -1767,12 +1894,14 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     ...d.settings,
                                                     policy: {
                                                         ...d.settings.policy,
-                                                        employmentInsuranceBusinessType: e.target.value as 'general'
+                                                        employmentInsuranceBusinessType: e.target.value as 'general' | 'agriculture_forestry_fisheries_sake' | 'construction'
                                                     }
                                                 }
                                             }))}
                                         >
                                             <option value="general">一般の事業</option>
+                                            <option value="agriculture_forestry_fisheries_sake">農林水産・清酒製造</option>
+                                            <option value="construction">建設の事業</option>
                                         </select>
                                     </div>
                                     <div>
@@ -1790,6 +1919,26 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     policy: {
                                                         ...d.settings.policy,
                                                         residentTaxPerCapitaYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-resident-capita-extra" className="text-xs text-gray-500">住民税均等割の上乗せ(年額, 円)</label>
+                                        <input
+                                            id="settings-policy-resident-capita-extra"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-resident-capita-extra"
+                                            value={data.settings.policy?.residentTaxPerCapitaExtraYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        residentTaxPerCapitaExtraYen: Number(e.target.value)
                                                     }
                                                 }
                                             }))}
@@ -1863,6 +2012,190 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                             <option value="self_employed">自営業</option>
                                             <option value="dependent_spouse">専業主婦(夫)等</option>
                                         </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-social-insurance-model" className="text-xs text-gray-500">社会保険モデル</label>
+                                        <select
+                                            id="settings-policy-social-insurance-model"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-social-insurance-model"
+                                            value={data.settings.policy?.socialInsuranceModel || 'employee'}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        socialInsuranceModel: e.target.value as 'employee' | 'national'
+                                                    }
+                                                }
+                                            }))}
+                                        >
+                                            <option value="employee">被用者保険（協会けんぽ・厚生年金）</option>
+                                            <option value="national">国保・国民年金（別ロジック）</option>
+                                        </select>
+                                        <p className="mt-1 text-[11px] text-gray-400">国保は「世帯割 + 人数割(世帯主・配偶者人数)」で計算</p>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-national-health-insurance-household-base" className="text-xs text-gray-500">国保料 世帯割(年額, 円/世帯)</label>
+                                        <input
+                                            id="settings-policy-national-health-insurance-household-base"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-national-health-insurance-household-base"
+                                            value={data.settings.policy?.nationalHealthInsuranceHouseholdBaseYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        nationalHealthInsuranceHouseholdBaseYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-national-health-insurance" className="text-xs text-gray-500">国保料 人数割単価(年額, 円/人)</label>
+                                        <input
+                                            id="settings-policy-national-health-insurance"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-national-health-insurance"
+                                            value={data.settings.policy?.nationalHealthInsuranceAnnualYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        nationalHealthInsurancePerMemberYen: Number(e.target.value),
+                                                        nationalHealthInsuranceAnnualYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-national-pension-monthly" className="text-xs text-gray-500">国民年金(月額, 円/人)</label>
+                                        <input
+                                            id="settings-policy-national-pension-monthly"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-national-pension-monthly"
+                                            value={data.settings.policy?.nationalPensionMonthlyYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        nationalPensionMonthlyYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-national-pension-start-age" className="text-xs text-gray-500">国民年金開始年齢</label>
+                                        <input
+                                            id="settings-policy-national-pension-start-age"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-national-pension-start-age"
+                                            value={data.settings.policy?.nationalPensionStartAge ?? 20}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        nationalPensionStartAge: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-national-pension-end-age" className="text-xs text-gray-500">国民年金終了年齢</label>
+                                        <input
+                                            id="settings-policy-national-pension-end-age"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-national-pension-end-age"
+                                            value={data.settings.policy?.nationalPensionEndAge ?? 59}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        nationalPensionEndAge: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-deduction-spouse" className="text-xs text-gray-500">配偶者控除(年額, 円)</label>
+                                        <input
+                                            id="settings-policy-deduction-spouse"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-deduction-spouse"
+                                            value={data.settings.policy?.deductionSpouseYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        deductionSpouseYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-deduction-medical" className="text-xs text-gray-500">医療費控除(年額, 円)</label>
+                                        <input
+                                            id="settings-policy-deduction-medical"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-deduction-medical"
+                                            value={data.settings.policy?.deductionMedicalYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        deductionMedicalYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-deduction-other" className="text-xs text-gray-500">その他控除(年額, 円)</label>
+                                        <input
+                                            id="settings-policy-deduction-other"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-deduction-other"
+                                            value={data.settings.policy?.deductionOtherYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        deductionOtherYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
                                     </div>
                                 </div>
                             </div>

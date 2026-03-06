@@ -140,6 +140,8 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         investment: data.settings.assetTransferAges?.investment ?? 65,
         dc: data.settings.assetTransferAges?.dc ?? 65,
     };
+    const retirementWithdrawalEnabled = data.settings.retirementWithdrawalStrategy?.enabled === true;
+    const retirementWithdrawalStartAge = data.settings.retirementWithdrawalStrategy?.startAge ?? 65;
     const includeTransfersInIncomeTotal = data.settings.glipCompatibility?.includeTransfersInIncomeTotal === true;
     const transferredByType: Record<'investment' | 'dc', boolean> = {
         investment: false,
@@ -217,7 +219,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         const isDeathYear = isDeathScenario && age === settings.deathAge!;
 
         // --- Income & Expenses Preparation ---
-        const policyEnabled = settings.policy?.enabled;
+        const policyEnabled = true;
         const policyContext: PolicyContext = settings.policy || {};
 
         let totalIncome = 0;
@@ -337,9 +339,6 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     if (category === 'salary') entry.salary += gross;
                     if (category === 'public_pension') entry.publicPension += gross;
                     personPolicyTaxInputs[person.id] = entry;
-                } else {
-                    const taxAmount = gross * (1 - inc.taxRate);
-                    expense.tax += taxAmount;
                 }
             }
         });
@@ -434,6 +433,16 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         }
 
         if (policyEnabled) {
+            if (policyContext.socialInsuranceModel === 'national') {
+                people.forEach(person => {
+                    if (person.relation !== 'self' && person.relation !== 'spouse') return;
+                    if (isDead && person.relation === 'self') return;
+                    const personAge = age - (person.birthYear - self.birthYear);
+                    if (!personPolicyTaxInputs[person.id]) {
+                        personPolicyTaxInputs[person.id] = { age: personAge, salary: 0, publicPension: 0 };
+                    }
+                });
+            }
             Object.values(personPolicyTaxInputs).forEach(input => {
                 const estimated = estimateAnnualTaxAndSocialInsurance({
                     annualSalaryIncomeManYen: input.salary,
@@ -444,6 +453,22 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 expense.tax += estimated.annualTaxManYen;
                 expense.socialInsurance += estimated.annualSocialInsuranceManYen;
             });
+            if (policyContext.socialInsuranceModel === 'national') {
+                const householdBaseYen = Math.max(0, policyContext.nationalHealthInsuranceHouseholdBaseYen ?? 0);
+                const perMemberYen = Math.max(
+                    0,
+                    policyContext.nationalHealthInsurancePerMemberYen
+                    ?? policyContext.nationalHealthInsuranceAnnualYen
+                    ?? 0
+                );
+                const coveredCount = people.filter(person => {
+                    if (person.relation !== 'self' && person.relation !== 'spouse') return false;
+                    if (isDead && person.relation === 'self') return false;
+                    return true;
+                }).length;
+                const nationalHealthInsuranceYen = householdBaseYen + (perMemberYen * coveredCount);
+                expense.socialInsurance += nationalHealthInsuranceYen / 10000;
+            }
         }
 
         // 2. Housing
@@ -582,12 +607,8 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             if (cashAsset) cashAsset.balance += balanceToApply;
         } else {
             let deficit = -balanceToApply;
-            if (cashAsset) {
-                const taken = Math.min(cashAsset.balance, deficit);
-                cashAsset.balance -= taken;
-                deficit -= taken;
-            }
-            if (deficit > 0) {
+            const withdrawFromInvestments = () => {
+                if (deficit <= 0) return;
                 const investments = currentAssets.filter(a => a.type === 'investment');
                 let investmentWithdrawalTotal = 0;
                 for (const inv of investments) {
@@ -603,7 +624,16 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     income.assetWithdrawal += investmentWithdrawalTotal;
                     financing.assetLiquidation += investmentWithdrawalTotal;
                 }
-            }
+            };
+            const withdrawFromCash = () => {
+                if (!cashAsset || deficit <= 0) return;
+                const taken = Math.min(cashAsset.balance, deficit);
+                cashAsset.balance -= taken;
+                deficit -= taken;
+            };
+            // Cash-first: use investment only for the remaining shortfall.
+            withdrawFromCash();
+            withdrawFromInvestments();
             if (deficit > 0 && cashAsset) {
                 cashAsset.balance -= deficit;
             }
@@ -612,6 +642,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
         // Asset Transfer Logic (type-specific transfer age, one-time per type).
         if (cashAsset) {
             (['investment', 'dc'] as const).forEach((type) => {
+                if (type === 'investment' && retirementWithdrawalEnabled && age >= retirementWithdrawalStartAge) return;
                 if (transferredByType[type]) return;
                 if (age < transferAges[type]) return;
 

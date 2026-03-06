@@ -18,7 +18,7 @@ export interface Income {
     amount: number; // 額面 (万円)
     startAge: number; // personの年齢
     endAge: number;
-    taxRate: number; // 手取り率 (0.75-0.8 etc)
+    taxRate?: number; // 互換用（制度ルール常時ONのためUIでは未使用）
     annualGrowthRate?: number; // 年次の昇給率 (例: 0.01 = 1%)
     peakAmount?: number; // 目標ピーク年収
     peakAge?: number; // ピークに達する年齢
@@ -133,13 +133,28 @@ export interface SimulationSettings {
     glipCompatibility?: {
         includeTransfersInIncomeTotal?: boolean;
     };
-    policy?: {
+    retirementWithdrawalStrategy?: {
         enabled?: boolean;
+        startAge?: number;
+    };
+    policy?: {
+        enabled?: boolean; // 互換用（実行時は常時ON）
         healthInsuranceRegion?: string;
-        employmentInsuranceBusinessType?: 'general';
+        employmentInsuranceBusinessType?: 'general' | 'agriculture_forestry_fisheries_sake' | 'construction';
         residentTaxPerCapitaYen?: number;
+        residentTaxPerCapitaExtraYen?: number;
         salaryBonusRatio?: number;
         bonusPaymentsPerYear?: number;
+        socialInsuranceModel?: 'employee' | 'national';
+        nationalHealthInsuranceHouseholdBaseYen?: number;
+        nationalHealthInsurancePerMemberYen?: number;
+        nationalHealthInsuranceAnnualYen?: number;
+        nationalPensionMonthlyYen?: number;
+        nationalPensionStartAge?: number;
+        nationalPensionEndAge?: number;
+        deductionSpouseYen?: number;
+        deductionMedicalYen?: number;
+        deductionOtherYen?: number;
         idecoCategory?: 'self_employed' | 'company_employee_no_corporate_pension' | 'company_employee_with_corporate_pension' | 'public_servant' | 'dependent_spouse';
     };
 }

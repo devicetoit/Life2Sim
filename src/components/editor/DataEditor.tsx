@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useStore } from '../../store';
-import { Save, Download, ChevronUp, Trash2, Upload, FileJson, AlertCircle, CheckCircle } from 'lucide-react';
+import { Save, Download, ChevronUp, Trash2, Upload, FileJson, AlertCircle, CheckCircle, Maximize2, X } from 'lucide-react';
 import { ProjectData, EducationStage } from '../../types';
 
 // Simple validation for imported JSON
@@ -145,6 +145,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
     const [isOpen, setIsOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [expandedEducationPlanChildId, setExpandedEducationPlanChildId] = useState<string | null>(null);
+    const [isIncomeEditorExpanded, setIsIncomeEditorExpanded] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isJsonFile = (file: File): boolean =>
         file.type === 'application/json' || file.name.toLowerCase().endsWith('.json');
@@ -290,6 +292,207 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         a.download = `life-plan-params-${new Date().toISOString().split('T')[0]}.txt`;
         a.click();
     };
+
+    const updateEducationPlanStages = useCallback((childId: string, updater: (stages: EducationStage[]) => EducationStage[]) => {
+        updateData((d) => ({
+            ...d,
+            educationPlans: d.educationPlans.map((ep) => {
+                if (ep.childId !== childId) return ep;
+                const baseStages = ep.stages && ep.stages.length > 0 ? ep.stages : cloneDefaultEducationStages();
+                return {
+                    ...ep,
+                    stages: updater(baseStages)
+                };
+            })
+        }));
+    }, [updateData]);
+
+    const renderEducationStageTable = useCallback((planChildId: string, stages: EducationStage[], wide: boolean = false) => (
+        <div className={wide ? '' : 'overflow-x-auto'}>
+            <table className={`w-full ${wide ? '' : 'min-w-[760px]'} text-sm border rounded-lg overflow-hidden`}>
+                <thead className="bg-gray-50 text-xs text-gray-500">
+                    <tr>
+                        <th className="px-3 py-2 text-left">区分</th>
+                        <th className="px-3 py-2 text-left">開始</th>
+                        <th className="px-3 py-2 text-left">終了</th>
+                        <th className="px-3 py-2 text-left">種別</th>
+                        <th className="px-3 py-2 text-left">累計額(万円)</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y">
+                    {stages.map((stage) => (
+                        <tr key={`${planChildId}-${stage.id}`} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 font-medium text-gray-700 whitespace-nowrap">{stage.name}</td>
+                            <td className="px-3 py-2 w-20">
+                                <input
+                                    type="number"
+                                    className="w-full border-gray-200 rounded"
+                                    name={`education-stage-start-${planChildId}-${stage.id}`}
+                                    value={stage.startAge}
+                                    onChange={(e) => updateEducationPlanStages(planChildId, (currentStages) =>
+                                        currentStages.map((s) => s.id === stage.id ? { ...s, startAge: Number(e.target.value) } : s)
+                                    )}
+                                />
+                            </td>
+                            <td className="px-3 py-2 w-20">
+                                <input
+                                    type="number"
+                                    className="w-full border-gray-200 rounded"
+                                    name={`education-stage-end-${planChildId}-${stage.id}`}
+                                    value={stage.endAge}
+                                    onChange={(e) => updateEducationPlanStages(planChildId, (currentStages) =>
+                                        currentStages.map((s) => s.id === stage.id ? { ...s, endAge: Number(e.target.value) } : s)
+                                    )}
+                                />
+                            </td>
+                            <td className="px-3 py-2 w-40">
+                                <select
+                                    className="w-full border-gray-200 rounded"
+                                    name={`education-stage-category-${planChildId}-${stage.id}`}
+                                    value={stage.category || ''}
+                                    onChange={(e) => updateEducationPlanStages(planChildId, (currentStages) =>
+                                        currentStages.map((s) => s.id === stage.id
+                                            ? {
+                                                ...s,
+                                                category: e.target.value,
+                                                totalAmount: getEducationStagePresetTotal(stage.id, e.target.value)
+                                            }
+                                            : s)
+                                    )}
+                                >
+                                    {(EDUCATION_STAGE_CATEGORY_OPTIONS[stage.id] || ['その他']).map((option) => (
+                                        <option key={option} value={option}>{option}</option>
+                                    ))}
+                                </select>
+                            </td>
+                            <td className="px-3 py-2 w-36">
+                                <input
+                                    type="number"
+                                    className="w-full border-gray-200 rounded"
+                                    name={`education-stage-amount-${planChildId}-${stage.id}`}
+                                    value={stage.totalAmount ?? ''}
+                                    placeholder={`${getEducationStagePresetTotal(stage.id, stage.category || '')}`}
+                                    onChange={(e) => updateEducationPlanStages(planChildId, (currentStages) =>
+                                        currentStages.map((s) => s.id === stage.id
+                                            ? { ...s, totalAmount: e.target.value === '' ? undefined : Number(e.target.value) }
+                                            : s)
+                                    )}
+                                    onBlur={(e) => {
+                                        if (e.target.value !== '') return;
+                                        const preset = getEducationStagePresetTotal(stage.id, stage.category || '');
+                                        updateEducationPlanStages(planChildId, (currentStages) =>
+                                            currentStages.map((s) => s.id === stage.id ? { ...s, totalAmount: preset } : s)
+                                        );
+                                    }}
+                                />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    ), [updateEducationPlanStages]);
+
+    const renderIncomeTable = useCallback((wide: boolean = false) => (
+        <div className={wide ? '' : 'overflow-x-auto'}>
+            <table className={`w-full ${wide ? '' : 'min-w-max'} text-sm whitespace-nowrap`}>
+                <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <tr>
+                        <th className="px-2 py-2 text-left">対象</th>
+                        <th className="px-2 py-2 text-left">名称</th>
+                        <th className="px-2 py-2 text-left w-20">カテゴリ</th>
+                        <th className="px-2 py-2 text-right w-16">金額</th>
+                        <th className="px-2 py-2 text-right w-12">開始</th>
+                        <th className="px-2 py-2 text-right w-12">終了</th>
+                        <th className="px-2 py-2 text-right w-16">年成長率</th>
+                        <th className="px-2 py-2 text-right w-20">ピーク金額</th>
+                        <th className="px-2 py-2 text-right w-12">ピーク年齢</th>
+                        <th className="px-2 py-2 text-right w-16">減衰率</th>
+                        <th className="px-2 py-2 w-8"></th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y">
+                    {data.incomes.map((inc) => (
+                        <tr key={inc.id} className="hover:bg-gray-50">
+                            <td className="px-2 py-1">
+                                <select
+                                    className="w-full border-none bg-transparent p-0 text-xs"
+                                    aria-label="収入対象者"
+                                    value={inc.personId}
+                                    onChange={(e) => updateData((d) => ({
+                                        ...d,
+                                        incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, personId: e.target.value } : i)
+                                    }))}
+                                >
+                                    {data.people.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            </td>
+                            <td className="px-2 py-1">
+                                <input
+                                    className="w-full border-none bg-transparent p-0 text-sm"
+                                    aria-label="収入名称"
+                                    name={`income-name-${inc.id}`}
+                                    autoComplete="off"
+                                    value={inc.name}
+                                    onChange={(e) => updateData((d) => ({
+                                        ...d,
+                                        incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, name: e.target.value } : i)
+                                    }))}
+                                />
+                            </td>
+                            <td className="px-2 py-1">
+                                <select
+                                    className="w-full border-none bg-transparent p-0 text-xs"
+                                    aria-label="収入カテゴリ"
+                                    value={inc.category}
+                                    onChange={(e) => updateData((d) => ({
+                                        ...d,
+                                        incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, category: e.target.value as any } : i)
+                                    }))}
+                                >
+                                    <option value="salary">給与</option>
+                                    <option value="public_pension">公的年金</option>
+                                    <option value="private_pension">私的年金</option>
+                                    <option value="individual_pension">個人年金</option>
+                                    <option value="child_allowance">手当</option>
+                                    <option value="retirement">退職金</option>
+                                    <option value="other">その他</option>
+                                </select>
+                            </td>
+                            <td className="px-2 py-1">
+                                <input type="number" className="w-full border-none bg-transparent p-0 text-right" aria-label="収入金額" name={`income-amount-${inc.id}`} autoComplete="off" value={inc.amount} onChange={(e) => updateData((d) => ({ ...d, incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, amount: Number(e.target.value) } : i) }))} />
+                            </td>
+                            <td className="px-2 py-1">
+                                <input type="number" className="w-full border-none bg-transparent p-0 text-right" aria-label="収入開始年齢" name={`income-start-age-${inc.id}`} autoComplete="off" value={inc.startAge} onChange={(e) => updateData((d) => ({ ...d, incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, startAge: Number(e.target.value) } : i) }))} />
+                            </td>
+                            <td className="px-2 py-1">
+                                <input type="number" className="w-full border-none bg-transparent p-0 text-right" aria-label="収入終了年齢" name={`income-end-age-${inc.id}`} autoComplete="off" value={inc.endAge} onChange={(e) => updateData((d) => ({ ...d, incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, endAge: Number(e.target.value) } : i) }))} />
+                            </td>
+                            <td className="px-2 py-1">
+                                <input type="number" step="0.001" className="w-full border-none bg-transparent p-0 text-right" aria-label="収入年成長率" value={inc.annualGrowthRate ?? ''} onChange={(e) => updateData((d) => ({ ...d, incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, annualGrowthRate: e.target.value === '' ? undefined : Number(e.target.value) } : i) }))} />
+                            </td>
+                            <td className="px-2 py-1">
+                                <input type="number" className="w-full border-none bg-transparent p-0 text-right" aria-label="収入ピーク金額" value={inc.peakAmount ?? ''} onChange={(e) => updateData((d) => ({ ...d, incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, peakAmount: e.target.value === '' ? undefined : Number(e.target.value) } : i) }))} />
+                            </td>
+                            <td className="px-2 py-1">
+                                <input type="number" className="w-full border-none bg-transparent p-0 text-right" aria-label="収入ピーク年齢" value={inc.peakAge ?? ''} onChange={(e) => updateData((d) => ({ ...d, incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, peakAge: e.target.value === '' ? undefined : Number(e.target.value) } : i) }))} />
+                            </td>
+                            <td className="px-2 py-1">
+                                <input type="number" step="0.001" min="0" max="1" className="w-full border-none bg-transparent p-0 text-right" aria-label="収入減衰率" value={inc.annualDecayRate ?? ''} onChange={(e) => updateData((d) => ({ ...d, incomes: d.incomes.map((i) => i.id === inc.id ? { ...i, annualDecayRate: e.target.value === '' ? undefined : Number(e.target.value) } : i) }))} />
+                            </td>
+                            <td className="px-2 py-1">
+                                <button onClick={() => updateData((d) => ({ ...d, incomes: d.incomes.filter((i) => i.id !== inc.id) }))} aria-label="収入項目を削除" className="text-gray-300 hover:text-red-500">
+                                    <Trash2 size={14} />
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    ), [data.incomes, data.people, updateData]);
 
     const exportAiMarkdown = async () => {
         const lines: string[] = [];
@@ -665,201 +868,17 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                         </button>
                     </div>
                     <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
-                        <table className="w-full min-w-max text-sm whitespace-nowrap">
-                            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
-                                <tr>
-                                    <th className="px-2 py-2 text-left">対象</th>
-                                    <th className="px-2 py-2 text-left">名称</th>
-                                    <th className="px-2 py-2 text-left w-20">カテゴリ</th>
-                                    <th className="px-2 py-2 text-right w-16">金額</th>
-                                    <th className="px-2 py-2 text-right w-12">開始</th>
-                                    <th className="px-2 py-2 text-right w-12">終了</th>
-                                    <th className="px-2 py-2 w-8"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {data.incomes.map((inc) => {
-                                    return (
-                                        <React.Fragment key={inc.id}>
-                                        <tr className="hover:bg-gray-50">
-                                            <td className="px-2 py-1">
-                                                <select
-                                                    className="w-full border-none p-0 bg-transparent text-xs"
-                                                    aria-label="収入対象者"
-                                                    value={inc.personId}
-                                                    onChange={(e) => updateData(d => ({
-                                                        ...d,
-                                                        incomes: d.incomes.map(i => i.id === inc.id ? { ...i, personId: e.target.value } : i)
-                                                    }))}
-                                                >
-                                                    {data.people.map(p => (
-                                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                                    ))}
-                                                </select>
-                                            </td>
-                                            <td className="px-2 py-1">
-                                                <input
-                                                    className="w-full border-none p-0 bg-transparent text-sm"
-                                                    aria-label="収入名称"
-                                                    name={`income-name-${inc.id}`}
-                                                    autoComplete="off"
-                                                    value={inc.name}
-                                                    onChange={(e) => updateData(d => ({
-                                                        ...d,
-                                                        incomes: d.incomes.map(i => i.id === inc.id ? { ...i, name: e.target.value } : i)
-                                                    }))}
-                                                />
-                                            </td>
-                                            <td className="px-2 py-1">
-                                                <select
-                                                    className="w-full border-none p-0 bg-transparent text-xs"
-                                                    aria-label="収入カテゴリ"
-                                                    value={inc.category}
-                                                    onChange={(e) => updateData(d => ({
-                                                        ...d,
-                                                        incomes: d.incomes.map(i => i.id === inc.id ? { ...i, category: e.target.value as any } : i)
-                                                    }))}
-                                                >
-                                                    <option value="salary">給与</option>
-                                                    <option value="public_pension">公的年金</option>
-                                                    <option value="private_pension">私的年金</option>
-                                                    <option value="individual_pension">個人年金</option>
-                                                    <option value="child_allowance">手当</option>
-                                                    <option value="retirement">退職金</option>
-                                                    <option value="other">その他</option>
-                                                </select>
-                                            </td>
-                                            <td className="px-2 py-1">
-                                                <input
-                                                    type="number"
-                                                    className="w-full border-none p-0 bg-transparent text-right"
-                                                    aria-label="収入金額"
-                                                    name={`income-amount-${inc.id}`}
-                                                    autoComplete="off"
-                                                    value={inc.amount}
-                                                    onChange={(e) => updateData(d => ({
-                                                        ...d,
-                                                        incomes: d.incomes.map(i => i.id === inc.id ? { ...i, amount: Number(e.target.value) } : i)
-                                                    }))}
-                                                />
-                                            </td>
-                                            <td className="px-2 py-1">
-                                                <input
-                                                    type="number"
-                                                    className="w-full border-none p-0 bg-transparent text-right"
-                                                    aria-label="収入開始年齢"
-                                                    name={`income-start-age-${inc.id}`}
-                                                    autoComplete="off"
-                                                    value={inc.startAge}
-                                                    onChange={(e) => updateData(d => ({
-                                                        ...d,
-                                                        incomes: d.incomes.map(i => i.id === inc.id ? { ...i, startAge: Number(e.target.value) } : i)
-                                                    }))}
-                                                />
-                                            </td>
-                                            <td className="px-2 py-1">
-                                                <input
-                                                    type="number"
-                                                    className="w-full border-none p-0 bg-transparent text-right"
-                                                    aria-label="収入終了年齢"
-                                                    name={`income-end-age-${inc.id}`}
-                                                    autoComplete="off"
-                                                    value={inc.endAge}
-                                                    onChange={(e) => updateData(d => ({
-                                                        ...d,
-                                                        incomes: d.incomes.map(i => i.id === inc.id ? { ...i, endAge: Number(e.target.value) } : i)
-                                                    }))}
-                                                />
-                                            </td>
-                                            <td className="px-2 py-1">
-                                                <button
-                                                    onClick={() => updateData(d => ({ ...d, incomes: d.incomes.filter(i => i.id !== inc.id) }))}
-                                                    aria-label="収入項目を削除"
-                                                    className="text-gray-300 hover:text-red-500"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr className="bg-gray-50/40">
-                                            <td colSpan={7} className="px-3 py-2">
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
-                                                    <div>
-                                                        <label htmlFor={`income-growth-rate-${inc.id}`} className="text-gray-500">年成長率</label>
-                                                        <input
-                                                            id={`income-growth-rate-${inc.id}`}
-                                                            type="number"
-                                                            step="0.001"
-                                                            className="w-full border-gray-200 rounded mt-1"
-                                                            value={inc.annualGrowthRate ?? ''}
-                                                            onChange={(e) => updateData(d => ({
-                                                                ...d,
-                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
-                                                                    ...i,
-                                                                    annualGrowthRate: e.target.value === '' ? undefined : Number(e.target.value)
-                                                                } : i)
-                                                            }))}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label htmlFor={`income-peak-amount-${inc.id}`} className="text-gray-500">ピーク金額(万円)</label>
-                                                        <input
-                                                            id={`income-peak-amount-${inc.id}`}
-                                                            type="number"
-                                                            className="w-full border-gray-200 rounded mt-1"
-                                                            value={inc.peakAmount ?? ''}
-                                                            onChange={(e) => updateData(d => ({
-                                                                ...d,
-                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
-                                                                    ...i,
-                                                                    peakAmount: e.target.value === '' ? undefined : Number(e.target.value)
-                                                                } : i)
-                                                            }))}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label htmlFor={`income-peak-age-${inc.id}`} className="text-gray-500">ピーク年齢</label>
-                                                        <input
-                                                            id={`income-peak-age-${inc.id}`}
-                                                            type="number"
-                                                            className="w-full border-gray-200 rounded mt-1"
-                                                            value={inc.peakAge ?? ''}
-                                                            onChange={(e) => updateData(d => ({
-                                                                ...d,
-                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
-                                                                    ...i,
-                                                                    peakAge: e.target.value === '' ? undefined : Number(e.target.value)
-                                                                } : i)
-                                                            }))}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label htmlFor={`income-decay-rate-${inc.id}`} className="text-gray-500">減衰率</label>
-                                                        <input
-                                                            id={`income-decay-rate-${inc.id}`}
-                                                            type="number"
-                                                            step="0.001"
-                                                            min="0"
-                                                            max="1"
-                                                            className="w-full border-gray-200 rounded mt-1"
-                                                            value={inc.annualDecayRate ?? ''}
-                                                            onChange={(e) => updateData(d => ({
-                                                                ...d,
-                                                                incomes: d.incomes.map(i => i.id === inc.id ? {
-                                                                    ...i,
-                                                                    annualDecayRate: e.target.value === '' ? undefined : Number(e.target.value)
-                                                                } : i)
-                                                            }))}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                        {renderIncomeTable()}
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setIsIncomeEditorExpanded(true)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+                        >
+                            <Maximize2 size={14} aria-hidden="true" />
+                            広く編集
+                        </button>
                     </div>
                 </section>
 
@@ -1559,110 +1578,54 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             + 追加
                         </button>
                     </div>
-                    <div className="space-y-2">
-                        {data.contributions.map((contrib) => (
-                            <div key={contrib.id} className="bg-white p-3 rounded-lg border shadow-sm">
-                                <div className="flex justify-between items-center mb-2">
-                                    <input
-                                        className="font-medium text-gray-800 border-none p-0 flex-1"
-                                        aria-label="積立設定名"
-                                        name={`contrib-name-${contrib.id}`}
-                                        autoComplete="off"
-                                        value={contrib.name}
-                                        onChange={(e) => updateData(d => ({
-                                            ...d,
-                                            contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, name: e.target.value } : c)
-                                        }))}
-                                    />
-                                    <button
-                                        onClick={() => updateData(d => ({ ...d, contributions: d.contributions.filter(c => c.id !== contrib.id) }))}
-                                        aria-label="積立設定を削除"
-                                        className="text-gray-300 hover:text-red-500"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-5 gap-2 text-sm">
-                                    <div>
-                                        <label htmlFor={`contrib-asset-${contrib.id}`} className="text-xs text-gray-400">対象資産</label>
-                                        <select
-                                            id={`contrib-asset-${contrib.id}`}
-                                            className="w-full border-gray-200 rounded mt-1 text-xs"
-                                            value={contrib.assetId}
-                                            onChange={(e) => updateData(d => ({
-                                                ...d,
-                                                contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, assetId: e.target.value } : c)
-                                            }))}
-                                        >
-                                            {data.assets.map(a => (
-                                                <option key={a.id} value={a.id}>{a.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label htmlFor={`contrib-amount-${contrib.id}`} className="text-xs text-gray-400">金額(万円)</label>
-                                        <input
-                                            id={`contrib-amount-${contrib.id}`}
-                                            type="number"
-                                            step="0.1"
-                                            className="w-full border-gray-200 rounded mt-1"
-                                            name={`contrib-amount-${contrib.id}`}
-                                            autoComplete="off"
-                                            value={contrib.amount}
-                                            onChange={(e) => updateData(d => ({
-                                                ...d,
-                                                contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, amount: Number(e.target.value) } : c)
-                                            }))}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor={`contrib-frequency-${contrib.id}`} className="text-xs text-gray-400">頻度</label>
-                                        <select
-                                            id={`contrib-frequency-${contrib.id}`}
-                                            className="w-full border-gray-200 rounded mt-1 text-xs"
-                                            value={contrib.frequency}
-                                            onChange={(e) => updateData(d => ({
-                                                ...d,
-                                                contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, frequency: e.target.value as 'monthly' | 'yearly' } : c)
-                                            }))}
-                                        >
-                                            <option value="monthly">毎月</option>
-                                            <option value="yearly">毎年</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label htmlFor={`contrib-start-age-${contrib.id}`} className="text-xs text-gray-400">開始年齢</label>
-                                        <input
-                                            id={`contrib-start-age-${contrib.id}`}
-                                            type="number"
-                                            className="w-full border-gray-200 rounded mt-1"
-                                            name={`contrib-start-age-${contrib.id}`}
-                                            autoComplete="off"
-                                            value={contrib.startAge}
-                                            onChange={(e) => updateData(d => ({
-                                                ...d,
-                                                contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, startAge: Number(e.target.value) } : c)
-                                            }))}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor={`contrib-end-age-${contrib.id}`} className="text-xs text-gray-400">終了年齢</label>
-                                        <input
-                                            id={`contrib-end-age-${contrib.id}`}
-                                            type="number"
-                                            className="w-full border-gray-200 rounded mt-1"
-                                            name={`contrib-end-age-${contrib.id}`}
-                                            autoComplete="off"
-                                            value={contrib.endAge}
-                                            onChange={(e) => updateData(d => ({
-                                                ...d,
-                                                contributions: d.contributions.map(c => c.id === contrib.id ? { ...c, endAge: Number(e.target.value) } : c)
-                                            }))}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
+                        <table className="w-full min-w-max text-sm whitespace-nowrap">
+                            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                                <tr>
+                                    <th className="px-3 py-2 text-left">名称</th>
+                                    <th className="px-3 py-2 text-left">対象資産</th>
+                                    <th className="px-3 py-2 text-right">金額(万円)</th>
+                                    <th className="px-3 py-2 text-left">頻度</th>
+                                    <th className="px-3 py-2 text-right">開始年齢</th>
+                                    <th className="px-3 py-2 text-right">終了年齢</th>
+                                    <th className="px-3 py-2 w-8"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {data.contributions.map((contrib) => (
+                                    <tr key={contrib.id} className="hover:bg-gray-50">
+                                        <td className="px-3 py-2">
+                                            <input className="w-full border-none bg-transparent p-0 font-medium text-gray-800" aria-label="積立設定名" name={`contrib-name-${contrib.id}`} autoComplete="off" value={contrib.name} onChange={(e) => updateData((d) => ({ ...d, contributions: d.contributions.map((c) => c.id === contrib.id ? { ...c, name: e.target.value } : c) }))} />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <select className="w-full border-none bg-transparent p-0 text-xs" id={`contrib-asset-${contrib.id}`} value={contrib.assetId} onChange={(e) => updateData((d) => ({ ...d, contributions: d.contributions.map((c) => c.id === contrib.id ? { ...c, assetId: e.target.value } : c) }))}>
+                                                {data.assets.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                            </select>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <input id={`contrib-amount-${contrib.id}`} type="number" step="0.1" className="w-full border-none bg-transparent p-0 text-right" name={`contrib-amount-${contrib.id}`} autoComplete="off" value={contrib.amount} onChange={(e) => updateData((d) => ({ ...d, contributions: d.contributions.map((c) => c.id === contrib.id ? { ...c, amount: Number(e.target.value) } : c) }))} />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <select id={`contrib-frequency-${contrib.id}`} className="w-full border-none bg-transparent p-0 text-xs" value={contrib.frequency} onChange={(e) => updateData((d) => ({ ...d, contributions: d.contributions.map((c) => c.id === contrib.id ? { ...c, frequency: e.target.value as 'monthly' | 'yearly' } : c) }))}>
+                                                <option value="monthly">毎月</option>
+                                                <option value="yearly">毎年</option>
+                                            </select>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <input id={`contrib-start-age-${contrib.id}`} type="number" className="w-full border-none bg-transparent p-0 text-right" name={`contrib-start-age-${contrib.id}`} autoComplete="off" value={contrib.startAge} onChange={(e) => updateData((d) => ({ ...d, contributions: d.contributions.map((c) => c.id === contrib.id ? { ...c, startAge: Number(e.target.value) } : c) }))} />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <input id={`contrib-end-age-${contrib.id}`} type="number" className="w-full border-none bg-transparent p-0 text-right" name={`contrib-end-age-${contrib.id}`} autoComplete="off" value={contrib.endAge} onChange={(e) => updateData((d) => ({ ...d, contributions: d.contributions.map((c) => c.id === contrib.id ? { ...c, endAge: Number(e.target.value) } : c) }))} />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <button onClick={() => updateData((d) => ({ ...d, contributions: d.contributions.filter((c) => c.id !== contrib.id) }))} aria-label="積立設定を削除" className="text-gray-300 hover:text-red-500">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </section>
 
@@ -1671,7 +1634,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                     <div className="flex flex-col mb-6">
                         <h3 className="text-lg font-display font-bold text-slate-800">教育費設定</h3>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Education Planning</p>
-                        <p className="mt-2 text-[11px] text-gray-400">段階別教育費のみ対応します。参考値は自動上書きせず、ボタンで入力します。高校の私立初期値は、現行の就学支援金制度を踏まえて `私立(支援考慮)` と `私立(満額負担寄り)` を分けています。</p>
+                        <p className="mt-2 text-[11px] text-gray-400">子どもごとに広く編集を開くと、横長テーブルを広い画面で編集できます。高校の私立初期値は、現行の就学支援金制度を踏まえて `私立(支援考慮)` と `私立(満額負担寄り)` を分けています。</p>
                     </div>
                     <div className="space-y-4">
                         {data.educationPlans.map((plan) => {
@@ -1684,135 +1647,29 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         <div className="space-y-1">
                                             <label className="text-xs text-gray-400">対象の子</label>
                                             <p className="font-medium text-gray-800">{child?.name || '不明'}</p>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[11px] text-gray-500">
-                                                    詳細合計: {detailedTotal.toLocaleString()} 万円
-                                                </span>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="text-right">
+                                                <p className="text-[11px] text-gray-400">教育費合計</p>
+                                                <p className="text-lg font-semibold text-gray-800">{detailedTotal.toLocaleString()} 万円</p>
                                             </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setExpandedEducationPlanChildId(plan.childId)}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+                                            >
+                                                <Maximize2 size={14} aria-hidden="true" />
+                                                広く編集
+                                            </button>
                                         </div>
                                     </div>
 
                                     <div className="space-y-3">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full min-w-[760px] text-sm border rounded-lg overflow-hidden">
-                                                <thead className="bg-gray-50 text-xs text-gray-500">
-                                                    <tr>
-                                                        <th className="px-3 py-2 text-left">区分</th>
-                                                        <th className="px-3 py-2 text-left">開始</th>
-                                                        <th className="px-3 py-2 text-left">終了</th>
-                                                        <th className="px-3 py-2 text-left">種別</th>
-                                                        <th className="px-3 py-2 text-left">累計額(万円)</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y">
-                                                    {stages.map((stage) => (
-                                                        <tr key={`${plan.childId}-${stage.id}`} className="hover:bg-gray-50">
-                                                            <td className="px-3 py-2 font-medium text-gray-700">{stage.name}</td>
-                                                            <td className="px-3 py-2 w-20">
-                                                                <input
-                                                                    type="number"
-                                                                    className="w-full border-gray-200 rounded"
-                                                                    name={`education-stage-start-${plan.childId}-${stage.id}`}
-                                                                    value={stage.startAge}
-                                                                    onChange={(e) => updateData(d => ({
-                                                                        ...d,
-                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
-                                                                            ? {
-                                                                                ...ep,
-                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id ? { ...s, startAge: Number(e.target.value) } : s)
-                                                                            }
-                                                                            : ep)
-                                                                    }))}
-                                                                />
-                                                            </td>
-                                                            <td className="px-3 py-2 w-20">
-                                                                <input
-                                                                    type="number"
-                                                                    className="w-full border-gray-200 rounded"
-                                                                    name={`education-stage-end-${plan.childId}-${stage.id}`}
-                                                                    value={stage.endAge}
-                                                                    onChange={(e) => updateData(d => ({
-                                                                        ...d,
-                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
-                                                                            ? {
-                                                                                ...ep,
-                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id ? { ...s, endAge: Number(e.target.value) } : s)
-                                                                            }
-                                                                            : ep)
-                                                                    }))}
-                                                                />
-                                                            </td>
-                                                            <td className="px-3 py-2 w-40">
-                                                                <select
-                                                                    className="w-full border-gray-200 rounded"
-                                                                    name={`education-stage-category-${plan.childId}-${stage.id}`}
-                                                                    value={stage.category || ''}
-                                                                    onChange={(e) => updateData(d => ({
-                                                                        ...d,
-                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
-                                                                            ? {
-                                                                                ...ep,
-                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id
-                                                                                    ? {
-                                                                                        ...s,
-                                                                                        category: e.target.value,
-                                                                                        totalAmount: getEducationStagePresetTotal(stage.id, e.target.value)
-                                                                                    }
-                                                                                    : s)
-                                                                            }
-                                                                            : ep)
-                                                                    }))}
-                                                                >
-                                                                    {(EDUCATION_STAGE_CATEGORY_OPTIONS[stage.id] || ['その他']).map((option) => (
-                                                                        <option key={option} value={option}>{option}</option>
-                                                                    ))}
-                                                                </select>
-                                                            </td>
-                                                            <td className="px-3 py-2 w-36">
-                                                                <input
-                                                                    type="number"
-                                                                    className="w-full border-gray-200 rounded"
-                                                                    name={`education-stage-amount-${plan.childId}-${stage.id}`}
-                                                                    value={stage.totalAmount ?? ''}
-                                                                    placeholder={`${getEducationStagePresetTotal(stage.id, stage.category || '')}`}
-                                                                    onChange={(e) => updateData(d => ({
-                                                                        ...d,
-                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
-                                                                            ? {
-                                                                                ...ep,
-                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id
-                                                                                    ? {
-                                                                                        ...s,
-                                                                                        totalAmount: e.target.value === '' ? undefined : Number(e.target.value)
-                                                                                    }
-                                                                                    : s)
-                                                                            }
-                                                                            : ep)
-                                                                    }))}
-                                                                    onBlur={(e) => {
-                                                                        if (e.target.value !== '') return;
-                                                                        const preset = getEducationStagePresetTotal(stage.id, stage.category || '');
-                                                                        updateData(d => ({
-                                                                            ...d,
-                                                                            educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
-                                                                                ? {
-                                                                                    ...ep,
-                                                                                    stages: (ep.stages || stages).map(s => s.id === stage.id ? { ...s, totalAmount: preset } : s)
-                                                                                }
-                                                                                : ep)
-                                                                        }));
-                                                                    }}
-                                                                />
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                        {renderEducationStageTable(plan.childId, stages)}
                                         <div className="flex items-center justify-between gap-4">
                                             <p className="text-[11px] text-gray-400">各区分の累計額を、その年齢レンジに均等配分して年次教育費へ反映します。種別を変更した時、または累計額を空欄で抜けた時は参考値を自動入力します。結婚援助額はここには含めません。</p>
                                             <div className="text-right">
-                                                <p className="text-[11px] text-gray-400">段階別教育費の合計</p>
+                                                <p className="text-[11px] text-gray-400">教育費合計</p>
                                                 <p className="text-sm font-semibold text-gray-800">{detailedTotal.toLocaleString()} 万円</p>
                                             </div>
                                         </div>
@@ -1822,6 +1679,91 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                         })}
                     </div>
                 </section>
+
+                {expandedEducationPlanChildId && (() => {
+                    const expandedPlan = data.educationPlans.find((plan) => plan.childId === expandedEducationPlanChildId);
+                    if (!expandedPlan) return null;
+                    const expandedChild = data.people.find((person) => person.id === expandedPlan.childId);
+                    const expandedStages = expandedPlan.stages && expandedPlan.stages.length > 0 ? expandedPlan.stages : cloneDefaultEducationStages();
+                    const expandedTotal = expandedStages.reduce((sum, stage) => sum + (stage.totalAmount || 0), 0);
+
+                    return (
+                        <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="education-expanded-editor-title"
+                            onClick={() => setExpandedEducationPlanChildId(null)}
+                        >
+                            <div
+                                className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4">
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Expanded Editor</p>
+                                        <h4 id="education-expanded-editor-title" className="text-lg font-display font-bold text-slate-800">
+                                            教育費設定: {expandedChild?.name || '子ども'}
+                                        </h4>
+                                        <p className="mt-1 text-sm text-slate-500">横スクロールせずに、年齢・種別・累計額をまとめて編集できます。</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setExpandedEducationPlanChildId(null)}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+                                    >
+                                        <X size={16} aria-hidden="true" />
+                                        閉じる
+                                    </button>
+                                </div>
+                                <div className="overflow-y-auto px-6 py-5">
+                                    <div className="mb-4 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                        <div>
+                                            <p className="text-xs font-semibold text-slate-700">教育費合計</p>
+                                            <p className="text-[11px] text-slate-500">種別変更時、または累計額を空欄で抜けた時は参考値を自動入力します。</p>
+                                        </div>
+                                        <p className="text-xl font-semibold text-slate-800">{expandedTotal.toLocaleString()} 万円</p>
+                                    </div>
+                                    {renderEducationStageTable(expandedPlan.childId, expandedStages, true)}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
+
+                {isIncomeEditorExpanded && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="income-expanded-editor-title"
+                        onClick={() => setIsIncomeEditorExpanded(false)}
+                    >
+                        <div
+                            className="flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Expanded Editor</p>
+                                    <h4 id="income-expanded-editor-title" className="text-lg font-display font-bold text-slate-800">収入の予定</h4>
+                                    <p className="mt-1 text-sm text-slate-500">対象者、金額、期間、成長率、ピーク条件を横スクロールせずにまとめて編集できます。</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsIncomeEditorExpanded(false)}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+                                >
+                                    <X size={16} aria-hidden="true" />
+                                    閉じる
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto px-6 py-5">
+                                {renderIncomeTable(true)}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Personal Fixed Costs Section */}
                 <section className="bg-white p-6 rounded-2xl premium-shadow border border-slate-200/60">
@@ -1848,124 +1790,57 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                             + 追加
                         </button>
                     </div>
-                    <div className="space-y-2">
-                        {data.personalFixedCosts.map((cost) => {
-                            const target = cost.target || 'person';
-                            const person = data.people.find(p => p.id === cost.personId);
-                            return (
-                                <div key={cost.id} className="bg-white p-3 rounded-lg border shadow-sm">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                                {target === 'family' ? '家族共通' : (person?.name || '対象者未設定')}
-                                            </span>
-                                            <input
-                                                className="font-medium text-gray-800 border-none p-0"
-                                                aria-label="個人固定費名"
-                                                name={`personal-cost-name-${cost.id}`}
-                                                autoComplete="off"
-                                                value={cost.name}
-                                                onChange={(e) => updateData(d => ({
-                                                    ...d,
-                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? { ...c, name: e.target.value } : c)
-                                                }))}
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={() => updateData(d => ({ ...d, personalFixedCosts: d.personalFixedCosts.filter(c => c.id !== cost.id) }))}
-                                            aria-label="個人固定費を削除"
-                                            className="text-gray-300 hover:text-red-500"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                                        <div>
-                                            <label htmlFor={`personal-cost-target-${cost.id}`} className="text-xs text-gray-400">対象</label>
-                                            <select
-                                                id={`personal-cost-target-${cost.id}`}
-                                                className="w-full border-gray-200 rounded mt-1 text-xs"
-                                                value={target}
-                                                onChange={(e) => updateData(d => ({
-                                                    ...d,
-                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? {
-                                                        ...c,
-                                                        target: e.target.value as 'person' | 'family',
-                                                        personId: e.target.value === 'family' ? c.personId : (c.personId || d.people[0]?.id || 'p1')
-                                                    } : c)
-                                                }))}
-                                            >
-                                                <option value="person">個人</option>
-                                                <option value="family">家族共通</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`personal-cost-person-${cost.id}`} className="text-xs text-gray-400">対象者</label>
-                                            <select
-                                                id={`personal-cost-person-${cost.id}`}
-                                                className="w-full border-gray-200 rounded mt-1 text-xs"
-                                                value={cost.personId || ''}
-                                                disabled={target === 'family'}
-                                                onChange={(e) => updateData(d => ({
-                                                    ...d,
-                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? { ...c, personId: e.target.value } : c)
-                                                }))}
-                                            >
-                                                {data.people.map((p) => (
-                                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`personal-cost-amount-${cost.id}`} className="text-xs text-gray-400">月額(万円)</label>
-                                            <input
-                                                id={`personal-cost-amount-${cost.id}`}
-                                                type="number"
-                                                step="0.1"
-                                                className="w-full border-gray-200 rounded mt-1"
-                                                name={`personal-cost-amount-${cost.id}`}
-                                                autoComplete="off"
-                                                value={cost.amount}
-                                                onChange={(e) => updateData(d => ({
-                                                    ...d,
-                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? { ...c, amount: Number(e.target.value) } : c)
-                                                }))}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`personal-cost-start-age-${cost.id}`} className="text-xs text-gray-400">開始年齢</label>
-                                            <input
-                                                id={`personal-cost-start-age-${cost.id}`}
-                                                type="number"
-                                                className="w-full border-gray-200 rounded mt-1"
-                                                name={`personal-cost-start-age-${cost.id}`}
-                                                autoComplete="off"
-                                                value={cost.startAge || 0}
-                                                onChange={(e) => updateData(d => ({
-                                                    ...d,
-                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? { ...c, startAge: Number(e.target.value) } : c)
-                                                }))}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`personal-cost-end-age-${cost.id}`} className="text-xs text-gray-400">終了年齢</label>
-                                            <input
-                                                id={`personal-cost-end-age-${cost.id}`}
-                                                type="number"
-                                                className="w-full border-gray-200 rounded mt-1"
-                                                name={`personal-cost-end-age-${cost.id}`}
-                                                autoComplete="off"
-                                                value={cost.endAge || 99}
-                                                onChange={(e) => updateData(d => ({
-                                                    ...d,
-                                                    personalFixedCosts: d.personalFixedCosts.map(c => c.id === cost.id ? { ...c, endAge: Number(e.target.value) } : c)
-                                                }))}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
+                        <table className="w-full min-w-max text-sm whitespace-nowrap">
+                            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                                <tr>
+                                    <th className="px-3 py-2 text-left">名称</th>
+                                    <th className="px-3 py-2 text-left">対象</th>
+                                    <th className="px-3 py-2 text-left">対象者</th>
+                                    <th className="px-3 py-2 text-right">月額(万円)</th>
+                                    <th className="px-3 py-2 text-right">開始年齢</th>
+                                    <th className="px-3 py-2 text-right">終了年齢</th>
+                                    <th className="px-3 py-2 w-8"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {data.personalFixedCosts.map((cost) => {
+                                    const target = cost.target || 'person';
+                                    return (
+                                        <tr key={cost.id} className="hover:bg-gray-50">
+                                            <td className="px-3 py-2">
+                                                <input className="w-full border-none bg-transparent p-0 font-medium text-gray-800" aria-label="個人固定費名" name={`personal-cost-name-${cost.id}`} autoComplete="off" value={cost.name} onChange={(e) => updateData((d) => ({ ...d, personalFixedCosts: d.personalFixedCosts.map((c) => c.id === cost.id ? { ...c, name: e.target.value } : c) }))} />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <select id={`personal-cost-target-${cost.id}`} className="w-full border-none bg-transparent p-0 text-xs" value={target} onChange={(e) => updateData((d) => ({ ...d, personalFixedCosts: d.personalFixedCosts.map((c) => c.id === cost.id ? { ...c, target: e.target.value as 'person' | 'family', personId: e.target.value === 'family' ? c.personId : (c.personId || d.people[0]?.id || 'p1') } : c) }))}>
+                                                    <option value="person">個人</option>
+                                                    <option value="family">家族共通</option>
+                                                </select>
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <select id={`personal-cost-person-${cost.id}`} className="w-full border-none bg-transparent p-0 text-xs" value={cost.personId || ''} disabled={target === 'family'} onChange={(e) => updateData((d) => ({ ...d, personalFixedCosts: d.personalFixedCosts.map((c) => c.id === cost.id ? { ...c, personId: e.target.value } : c) }))}>
+                                                    {data.people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                </select>
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <input id={`personal-cost-amount-${cost.id}`} type="number" step="0.1" className="w-full border-none bg-transparent p-0 text-right" name={`personal-cost-amount-${cost.id}`} autoComplete="off" value={cost.amount} onChange={(e) => updateData((d) => ({ ...d, personalFixedCosts: d.personalFixedCosts.map((c) => c.id === cost.id ? { ...c, amount: Number(e.target.value) } : c) }))} />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <input id={`personal-cost-start-age-${cost.id}`} type="number" className="w-full border-none bg-transparent p-0 text-right" name={`personal-cost-start-age-${cost.id}`} autoComplete="off" value={cost.startAge || 0} onChange={(e) => updateData((d) => ({ ...d, personalFixedCosts: d.personalFixedCosts.map((c) => c.id === cost.id ? { ...c, startAge: Number(e.target.value) } : c) }))} />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <input id={`personal-cost-end-age-${cost.id}`} type="number" className="w-full border-none bg-transparent p-0 text-right" name={`personal-cost-end-age-${cost.id}`} autoComplete="off" value={cost.endAge || 99} onChange={(e) => updateData((d) => ({ ...d, personalFixedCosts: d.personalFixedCosts.map((c) => c.id === cost.id ? { ...c, endAge: Number(e.target.value) } : c) }))} />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <button onClick={() => updateData((d) => ({ ...d, personalFixedCosts: d.personalFixedCosts.filter((c) => c.id !== cost.id) }))} aria-label="個人固定費を削除" className="text-gray-300 hover:text-red-500">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </section>
 

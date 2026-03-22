@@ -70,7 +70,11 @@ export const AssetChart: React.FC<Props> = ({ results, assets }) => {
                         domain={[minAge, maxAge]}
                     />
                     <YAxis width={88} />
-                    <Tooltip formatter={(value: number) => `${formatAmount(value)}万円`} />
+                    <Tooltip
+                        formatter={(value: number) => `${formatAmount(value)}万円`}
+                        isAnimationActive={!prefersReducedMotion}
+                        animationDuration={prefersReducedMotion ? 0 : 1000}
+                    />
                     <Legend verticalAlign="top" align="left" wrapperStyle={{ paddingBottom: 8 }} />
                     {keys.map((key, index) => (
                         <Area

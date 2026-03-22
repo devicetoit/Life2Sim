@@ -59,6 +59,9 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
         return ticks;
     }, [left, right, minAge, maxAge]);
 
+    const currentStart = left === 'dataMin' ? minAge : left;
+    const currentEnd = right === 'dataMax' ? maxAge : right;
+
     const yAxisMax = useMemo(() => {
         if (visibleData.length === 0) return 'auto';
         let maxVal = 0;
@@ -129,6 +132,58 @@ export const BalanceChart: React.FC<Props> = ({ results }) => {
                         </button>
                     )}
                 </div>
+            </div>
+
+            <div className="mb-4 flex flex-wrap items-end gap-3">
+                <label className="flex flex-col gap-1 text-xs font-bold text-slate-600">
+                    表示開始年齢
+                    <select
+                        name="balance_chart_start_age"
+                        aria-label="収支グラフの表示開始年齢"
+                        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm font-medium text-slate-700"
+                        value={currentStart}
+                        onChange={(e) => {
+                            const nextStart = Number(e.target.value);
+                            setLeft(nextStart);
+                            if (currentEnd < nextStart) {
+                                setRight(nextStart);
+                            }
+                        }}
+                    >
+                        {data.map((entry) => (
+                            <option key={`start-${entry.age}`} value={entry.age}>
+                                {entry.age}歳
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                <label className="flex flex-col gap-1 text-xs font-bold text-slate-600">
+                    表示終了年齢
+                    <select
+                        name="balance_chart_end_age"
+                        aria-label="収支グラフの表示終了年齢"
+                        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm font-medium text-slate-700"
+                        value={currentEnd}
+                        onChange={(e) => {
+                            const nextEnd = Number(e.target.value);
+                            setRight(nextEnd);
+                            if (currentStart > nextEnd) {
+                                setLeft(nextEnd);
+                            }
+                        }}
+                    >
+                        {data.map((entry) => (
+                            <option key={`end-${entry.age}`} value={entry.age}>
+                                {entry.age}歳
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                <p className="text-xs text-slate-500">
+                    ドラッグ操作に加えて、キーボードでも表示範囲を変更できます。
+                </p>
             </div>
 
             <ResponsiveContainer width="100%" height="100%">

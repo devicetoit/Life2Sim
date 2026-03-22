@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     {/* Simplified Risk Mgmt */}
-                    <div className="flex items-center gap-4 bg-rose-50/40 p-1 pl-4 rounded-2xl border border-rose-100/50 hover:bg-rose-50 transition-colors">
+                    <div className="flex items-center gap-4 bg-rose-50/40 p-1 pl-4 rounded-2xl border border-rose-100/50 hover:bg-rose-50 motion-safe:transition-colors motion-reduce:transition-none">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest leading-none mb-1.5 mt-1">もしもの時のシミュレーション</span>
                             <select
@@ -104,9 +104,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/50">
                         <button
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${isSidebarOpen ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-200 shadow-sm'}`}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold motion-safe:transition-colors motion-reduce:transition-none flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${isSidebarOpen ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-200 shadow-sm'}`}
                         >
-                            <Save size={14} />
+                            <Save size={14} aria-hidden="true" />
                             {isSidebarOpen ? '設定を隠す' : '設定を表示'}
                         </button>
 
@@ -121,9 +121,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <button
                                     onClick={onSave}
                                     disabled={isSaving || isSyncing}
-                                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 transition-colors motion-safe:transition-transform flex items-center gap-2 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 motion-safe:transition-colors motion-safe:transition-transform motion-reduce:transition-none flex items-center gap-2 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                                 >
-                                    <CloudUpload size={14} className={isSaving ? 'motion-safe:animate-bounce' : ''} />
+                                    <CloudUpload size={14} aria-hidden="true" className={isSaving ? 'motion-safe:animate-bounce' : ''} />
                                     {isSaving ? '保存中…' : '保存'}
                                 </button>
                                 <button
@@ -133,16 +133,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-100 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                                     title="Logout"
                                 >
-                                    <LogOut size={16} />
+                                    <LogOut size={16} aria-hidden="true" />
                                 </button>
                             </>
                         ) : (
                             <button
                                 onClick={onLogin}
                                 disabled={isAuthLoading}
-                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition-colors transition-transform flex items-center gap-2 shadow-sm hover:translate-y-[-1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 motion-safe:transition-colors motion-safe:transition-transform motion-reduce:transition-none flex items-center gap-2 shadow-sm motion-safe:hover:translate-y-[-1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                             >
-                                <LogIn size={16} className="text-indigo-500" />
+                                <LogIn size={16} aria-hidden="true" className="text-indigo-500" />
                                 クラウド同期
                             </button>
                         )}
@@ -172,7 +172,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <div className="bg-white p-8 rounded-[2rem] premium-shadow border border-slate-200/60 ring-1 ring-slate-100">
                                 <h2 className="text-xl font-display font-bold text-slate-800 mb-8 flex items-center gap-3">
                                     <div className="p-2.5 bg-indigo-50 rounded-xl">
-                                        <Wallet className="text-indigo-500 w-5 h-5" />
+                                        <Wallet className="text-indigo-500 w-5 h-5" aria-hidden="true" />
                                     </div>
                                     収支推移 (入るお金・使うお金)
                                 </h2>
@@ -182,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <div className="bg-white p-8 rounded-[2rem] premium-shadow border border-slate-200/60 ring-1 ring-slate-100">
                                 <h2 className="text-xl font-display font-bold text-slate-800 mb-8 flex items-center gap-3">
                                     <div className="p-2.5 bg-emerald-50 rounded-xl">
-                                        <Clock className="text-emerald-500 w-5 h-5" />
+                                        <Clock className="text-emerald-500 w-5 h-5" aria-hidden="true" />
                                     </div>
                                     資産（貯蓄・投資）の推移
                                 </h2>
@@ -199,7 +199,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                 {/* Right Sidebar Editor */}
                 <aside
-                    className={`hidden xl:flex ${isSidebarOpen ? 'translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0'} transition-[width,opacity,transform] duration-300 ease-in-out border-l border-slate-200 bg-white overflow-hidden flex-col`}
+                    className={`hidden xl:flex ${isSidebarOpen ? 'translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0'} motion-safe:transition-[width,opacity,transform] motion-safe:duration-300 motion-safe:ease-in-out motion-reduce:transition-none border-l border-slate-200 bg-white overflow-hidden flex-col`}
                     style={{ width: isSidebarOpen ? 'min(580px, 42vw)' : '0px' }}
                 >
                     <div className="h-full min-h-0" style={{ width: 'min(580px, 42vw)' }}>

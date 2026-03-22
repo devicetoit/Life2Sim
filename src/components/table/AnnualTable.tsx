@@ -182,7 +182,7 @@ export const AnnualTable: React.FC<Props> = ({ results }) => {
                     onClick={handleExportCSV}
                     className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded text-sm text-gray-700 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >
-                    <Download size={16} /> CSV出力
+                    <Download size={16} aria-hidden="true" /> CSV出力
                 </button>
             </div>
             <div

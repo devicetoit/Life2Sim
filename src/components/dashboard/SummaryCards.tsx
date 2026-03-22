@@ -27,8 +27,8 @@ export const SummaryCards: React.FC<Props> = ({ results }) => {
     const isSafe = bankruptcyAge === -1;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            <div className="p-8 rounded-[2rem] border border-slate-200/60 bg-white premium-shadow transition-transform hover:scale-[1.02]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            <div className="p-8 rounded-[2rem] border border-slate-200/60 bg-white premium-shadow motion-safe:transition-transform motion-reduce:transition-none motion-safe:hover:scale-[1.02]">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 rounded-xl bg-blue-50 text-blue-500 font-bold">
                         <Wallet size={20} aria-hidden="true" />
@@ -43,7 +43,7 @@ export const SummaryCards: React.FC<Props> = ({ results }) => {
                 </p>
             </div>
 
-            <div className="p-8 rounded-[2rem] border border-slate-200/60 bg-white premium-shadow transition-transform hover:scale-[1.02]">
+            <div className="p-8 rounded-[2rem] border border-slate-200/60 bg-white premium-shadow motion-safe:transition-transform motion-reduce:transition-none motion-safe:hover:scale-[1.02]">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500 font-bold">
                         <TrendingUp size={20} aria-hidden="true" />
@@ -58,7 +58,7 @@ export const SummaryCards: React.FC<Props> = ({ results }) => {
                 </p>
             </div>
 
-            <div className={`p-8 rounded-[2rem] border premium-shadow transition-transform hover:scale-[1.02] ${!isSafe ? 'bg-rose-50 border-rose-100 ring-4 ring-rose-50/50' : 'bg-emerald-50 border-emerald-100 ring-4 ring-emerald-50/50'}`}>
+            <div className={`p-8 rounded-[2rem] border premium-shadow motion-safe:transition-transform motion-reduce:transition-none motion-safe:hover:scale-[1.02] ${!isSafe ? 'bg-rose-50 border-rose-100 ring-4 ring-rose-50/50' : 'bg-emerald-50 border-emerald-100 ring-4 ring-emerald-50/50'}`}>
                 <div className="flex items-center gap-3 mb-4">
                     <div className={`p-2 rounded-xl ${!isSafe ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
                         <AlertTriangle size={20} aria-hidden="true" />

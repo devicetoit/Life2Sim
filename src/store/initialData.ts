@@ -38,7 +38,20 @@ export const initialData: ProjectData = {
         { id: 'e3', name: '住宅リフォーム', category: 'irregular', amount: 200, type: 'one_time', startAge: 65, rateCategory: 'none' },
     ],
     educationPlans: [
-        { childId: 'p3', templateName: 'default', totalAmountOverride: 2000 },
+        {
+            childId: 'p3',
+            templateName: 'default',
+            totalAmountOverride: 2000,
+            stages: [
+                { id: 'preschool_0_3', name: '保育園/幼稚園', category: '認可', startAge: 0, endAge: 3, totalAmount: 180 },
+                { id: 'preschool_4_6', name: '保育園/幼稚園', category: '認可', startAge: 4, endAge: 6, totalAmount: 78 },
+                { id: 'elementary', name: '小学校', category: '公立', startAge: 7, endAge: 12, totalAmount: 180 },
+                { id: 'junior_high', name: '中学校', category: '公立', startAge: 13, endAge: 15, totalAmount: 180 },
+                { id: 'high_school', name: '高校', category: '公立', startAge: 16, endAge: 18, totalAmount: 150 },
+                { id: 'university', name: '大学', category: '私立文系', startAge: 19, endAge: 22, totalAmount: 629 },
+                { id: 'university_commute', name: '通学区分', category: '自宅', startAge: 19, endAge: 22, totalAmount: 144 }
+            ]
+        },
     ],
     housing: {
         purchaseAge: 40,
@@ -103,6 +116,9 @@ export const initialData: ProjectData = {
             employmentInsuranceBusinessType: 'general',
             residentTaxPerCapitaYen: 5000,
             residentTaxPerCapitaExtraYen: 0,
+            investmentTaxRate: 0.20315,
+            nisaLifetimeLimitManYen: 1800,
+            nisaLifetimeUsedManYen: 0,
             salaryBonusRatio: 0,
             bonusPaymentsPerYear: 2,
             socialInsuranceModel: 'employee',
@@ -112,9 +128,14 @@ export const initialData: ProjectData = {
             nationalPensionMonthlyYen: 0,
             nationalPensionStartAge: 20,
             nationalPensionEndAge: 59,
+            autoSpouseDeductionEnabled: true,
+            autoDependentDeductionEnabled: true,
+            retirementYearsOfService: 30,
             deductionSpouseYen: 0,
             deductionMedicalYen: 0,
             deductionOtherYen: 0,
+            publicPensionAutoCalculationEnabled: true,
+            publicPensionClaimAge: 65,
             idecoCategory: 'company_employee_no_corporate_pension'
         }
     }

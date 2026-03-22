@@ -1,10 +1,13 @@
-import { ProjectData, AnnualResult, RateCategory, Person, EducationTemplate, EducationPlan } from '../types';
+import { ProjectData, AnnualResult, RateCategory, Person, EducationTemplate, EducationPlan, EducationStage } from '../types';
 import {
     estimateAnnualTaxAndSocialInsurance,
     getAdjustedBasicPensionAnnualManYen,
+    estimateBasicPensionAnnualManYen,
+    estimateEmployeePensionAnnualManYen,
     capContributionByPolicyRules,
     PolicyContext
 } from '../rules/policyRules';
+import investmentRules from '../rules/investment.json';
 
 // Utility to calculate compound rate
 const getRate = (rates: Record<RateCategory, number>, category: RateCategory): number => {
@@ -39,6 +42,20 @@ const calculateEducationCosts = (
     plans.forEach(plan => {
         const child = children.find(p => p.id === plan.childId);
         if (!child) return;
+
+        if (plan.stages && plan.stages.length > 0) {
+            plan.stages.forEach((stage: EducationStage) => {
+                const startAge = Math.floor(stage.startAge);
+                const endAge = Math.max(startAge, Math.floor(stage.endAge));
+                const yearCount = Math.max(1, endAge - startAge + 1);
+                const annualAmount = (stage.totalAmount || 0) / yearCount;
+                for (let targetAge = startAge; targetAge <= endAge; targetAge += 1) {
+                    const targetYear = child.birthYear + targetAge;
+                    costsByYear[targetYear] = (costsByYear[targetYear] || 0) + annualAmount;
+                }
+            });
+            return;
+        }
 
         const templateName = plan.templateName || 'default';
         const template = templates[templateName];
@@ -123,6 +140,111 @@ const calculateSurvivorPension = (year: number, _deceasedPerson: Person, childre
     return basicPension + emlpoyeesPension;
 };
 
+const getSpouseDeductionYen = (spouseIncomeManYen: number, taxpayerIncomeManYen: number): number => {
+    if (taxpayerIncomeManYen > 1220) return 0;
+    if (spouseIncomeManYen <= 150) return 380000;
+    if (spouseIncomeManYen <= 155) return 360000;
+    if (spouseIncomeManYen <= 160) return 310000;
+    if (spouseIncomeManYen <= 167) return 260000;
+    if (spouseIncomeManYen <= 175) return 210000;
+    if (spouseIncomeManYen <= 183) return 160000;
+    if (spouseIncomeManYen <= 190) return 110000;
+    if (spouseIncomeManYen <= 197) return 60000;
+    if (spouseIncomeManYen <= 201) return 30000;
+    return 0;
+};
+
+const getDependentDeductionYen = (age: number): number => {
+    if (age >= 19 && age <= 22) return 630000;
+    if (age >= 16) return 380000;
+    return 0;
+};
+
+const resolveIncomeAmountForPersonAge = (inc: ProjectData['incomes'][number], personAge: number): number => {
+    let gross = inc.amount;
+
+    if (inc.peakAmount && inc.peakAge) {
+        if (personAge <= inc.peakAge) {
+            const totalYears = inc.peakAge - inc.startAge;
+            const elapsed = personAge - inc.startAge;
+            const ratio = totalYears > 0 ? elapsed / totalYears : 1;
+            gross = inc.amount + (inc.peakAmount - inc.amount) * (1 - Math.pow(1 - ratio, 1.4));
+        } else {
+            const elapsedSincePeak = personAge - inc.peakAge;
+            const plateauYears = 2;
+            if (elapsedSincePeak <= plateauYears) {
+                gross = inc.peakAmount;
+            } else {
+                const decayElapsed = elapsedSincePeak - plateauYears;
+                gross = inc.peakAmount * Math.pow(1 - (inc.annualDecayRate || 0.005), decayElapsed);
+            }
+        }
+    } else if (inc.annualGrowthRate) {
+        const elapsed = personAge - inc.startAge;
+        gross = gross * Math.pow(1 + inc.annualGrowthRate, elapsed);
+    }
+
+    return gross;
+};
+
+const estimateEmployeeCoverageMonths = (person: Person, incomes: ProjectData['incomes']): number => {
+    const salaryIncomes = incomes.filter((inc) => inc.personId === person.id && inc.category === 'salary');
+    const coveredAges = new Set<number>();
+
+    salaryIncomes.forEach((inc) => {
+        for (let targetAge = Math.max(20, inc.startAge); targetAge <= Math.min(69, inc.endAge); targetAge += 1) {
+            coveredAges.add(targetAge);
+        }
+    });
+
+    return Math.min(480, coveredAges.size * 12);
+};
+
+const estimateNationalCoverageMonths = (policyContext: PolicyContext): number => {
+    const startAge = Math.max(20, Math.floor(policyContext.nationalPensionStartAge ?? 20));
+    const endAge = Math.max(startAge, Math.floor(policyContext.nationalPensionEndAge ?? 59));
+    return Math.min(480, Math.max(0, (endAge - startAge + 1) * 12));
+};
+
+const estimateBasicPensionForPerson = (params: {
+    person: Person;
+    incomes: ProjectData['incomes'];
+    policyContext: PolicyContext;
+}): number => {
+    const claimAge = Math.max(60, Math.floor(params.policyContext.publicPensionClaimAge ?? 65));
+    const coverageMonths = params.policyContext.socialInsuranceModel === 'national'
+        ? estimateNationalCoverageMonths(params.policyContext)
+        : estimateEmployeeCoverageMonths(params.person, params.incomes);
+
+    return estimateBasicPensionAnnualManYen({
+        claimAge,
+        coverageMonths
+    });
+};
+
+const estimateEmployeePensionForPerson = (params: {
+    person: Person;
+    incomes: ProjectData['incomes'];
+    policyContext: PolicyContext;
+}): number => {
+    if (params.policyContext.socialInsuranceModel === 'national') return 0;
+
+    const claimAge = Math.max(60, Math.floor(params.policyContext.publicPensionClaimAge ?? 65));
+    const salaryIncomes = params.incomes.filter((inc) => inc.personId === params.person.id && inc.category === 'salary');
+    const salaryHistoryAnnualManYen: number[] = [];
+
+    salaryIncomes.forEach((inc) => {
+        for (let targetAge = Math.max(20, inc.startAge); targetAge <= Math.min(69, inc.endAge); targetAge += 1) {
+            salaryHistoryAnnualManYen.push(resolveIncomeAmountForPersonAge(inc, targetAge));
+        }
+    });
+
+    return estimateEmployeePensionAnnualManYen({
+        claimAge,
+        salaryHistoryAnnualManYen
+    });
+};
+
 export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
     const results: AnnualResult[] = [];
     const { people, incomes, assets, contributions, livingCostSteps, events, housing, personalFixedCosts, settings, educationPlans } = data;
@@ -143,9 +265,33 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
     const retirementWithdrawalEnabled = data.settings.retirementWithdrawalStrategy?.enabled === true;
     const retirementWithdrawalStartAge = data.settings.retirementWithdrawalStrategy?.startAge ?? 65;
     const includeTransfersInIncomeTotal = data.settings.glipCompatibility?.includeTransfersInIncomeTotal === true;
+    const investmentTaxRate = Math.max(0, settings.policy?.investmentTaxRate ?? 0.20315);
+    const nisaLifetimeLimitManYen = Math.max(0, settings.policy?.nisaLifetimeLimitManYen ?? (investmentRules.nisa.lifetime_limits.total / 10000));
+    let nisaLifetimeUsedManYen = Math.max(0, settings.policy?.nisaLifetimeUsedManYen ?? 0);
     const transferredByType: Record<'investment' | 'dc', boolean> = {
         investment: false,
         dc: false,
+    };
+    const investmentNisaBalance: Record<string, number> = {};
+    const investmentTaxableBalance: Record<string, number> = {};
+    currentAssets.forEach(asset => {
+        if (asset.type === 'investment') {
+            investmentNisaBalance[asset.id] = 0;
+            investmentTaxableBalance[asset.id] = asset.balance;
+        }
+    });
+
+    const reduceInvestmentBuckets = (assetId: string, amount: number): number => {
+        const nisa = investmentNisaBalance[assetId] || 0;
+        const taxable = investmentTaxableBalance[assetId] || 0;
+        const total = nisa + taxable;
+        if (total <= 0 || amount <= 0) return 0;
+        const taken = Math.min(total, amount);
+        const nisaTake = taken * (nisa / total);
+        const taxableTake = taken - nisaTake;
+        investmentNisaBalance[assetId] = Math.max(0, nisa - nisaTake);
+        investmentTaxableBalance[assetId] = Math.max(0, taxable - taxableTake);
+        return taken;
     };
 
     // --- Pre-calculation for Housing Loan with Variable Rates ---
@@ -235,7 +381,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             assetTransfer: 0,
             total: 0,
         };
-        const personPolicyTaxInputs: Record<string, { age: number; salary: number; publicPension: number }> = {};
+        const personPolicyTaxInputs: Record<string, { age: number; salary: number; publicPension: number; retirement: number }> = {};
 
         const expense = {
             total: 0,
@@ -270,33 +416,23 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
             const personAge = age - (person ? (person.birthYear - self.birthYear) : 0);
 
             if (personAge >= inc.startAge && personAge <= inc.endAge) {
-                let gross = inc.amount;
+                let gross = resolveIncomeAmountForPersonAge(inc, personAge);
 
-                if (inc.peakAmount && inc.peakAge) {
-                    if (personAge <= inc.peakAge) {
-                        // 目標値(peakAmount)に向かって徐々に鈍化しながら収束するカーブ (パワー関数)
-                        const totalYears = inc.peakAge - inc.startAge;
-                        const elapsed = personAge - inc.startAge;
-                        const ratio = totalYears > 0 ? elapsed / totalYears : 1;
-                        // 1.4乗のカーブで、初期の伸びは大きく、ピークに近づくほど緩やかになるように調整
-                        gross = inc.amount + (inc.peakAmount - inc.amount) * (1 - Math.pow(1 - ratio, 1.4));
-                    } else {
-                        // ピーク後のフェーズ (横ばい期間の後に微減)
-                        const elapsedSincePeak = personAge - inc.peakAge;
-                        const plateauYears = 2; // ピークを2年程度維持 (例: 54, 55, 56)
-                        if (elapsedSincePeak <= plateauYears) {
-                            gross = inc.peakAmount;
-                        } else {
-                            const decayElapsed = elapsedSincePeak - plateauYears;
-                            gross = inc.peakAmount * Math.pow(1 - (inc.annualDecayRate || 0.005), decayElapsed);
-                        }
+                if (policyEnabled && policyContext.publicPensionAutoCalculationEnabled !== false && inc.category === 'public_pension' && person) {
+                    if (inc.name.includes('基礎年金')) {
+                        gross = estimateBasicPensionForPerson({
+                            person,
+                            incomes,
+                            policyContext
+                        });
+                    } else if (inc.name.includes('厚生年金')) {
+                        gross = estimateEmployeePensionForPerson({
+                            person,
+                            incomes,
+                            policyContext
+                        });
                     }
-                } else if (inc.annualGrowthRate) {
-                    const elapsed = personAge - inc.startAge;
-                    gross = gross * Math.pow(1 + inc.annualGrowthRate, elapsed);
-                }
-                // Public pension (basic pension) is normalized to rule-based baseline when enabled.
-                if (policyEnabled && inc.category === 'public_pension' && inc.name.includes('基礎年金')) {
+                } else if (policyEnabled && inc.category === 'public_pension' && inc.name.includes('基礎年金')) {
                     gross = getAdjustedBasicPensionAnnualManYen(inc.startAge);
                 }
 
@@ -309,11 +445,12 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 let category = inc.category;
                 if (!category) {
                     const name = inc.name;
-                    if (name.includes('給与') || name.includes('賞与') || name.includes('退職')) category = 'salary';
+                    if (name.includes('給与') || name.includes('賞与')) category = 'salary';
                     else if (name.includes('公的年金')) category = 'public_pension';
                     else if (name.includes('私の年金')) category = 'private_pension';
                     else if (name.includes('個人年金')) category = 'individual_pension';
                     else if (name.includes('手当')) category = 'child_allowance';
+                    else if (name.includes('退職')) category = 'retirement';
                     else category = 'other';
                 }
 
@@ -333,11 +470,12 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     income.childAllowance += gross;
                 }
 
-                if (policyEnabled && (category === 'salary' || category === 'public_pension') && person) {
-                    const entry = personPolicyTaxInputs[person.id] || { age: personAge, salary: 0, publicPension: 0 };
+                if (policyEnabled && (category === 'salary' || category === 'public_pension' || category === 'retirement') && person) {
+                    const entry = personPolicyTaxInputs[person.id] || { age: personAge, salary: 0, publicPension: 0, retirement: 0 };
                     entry.age = personAge;
                     if (category === 'salary') entry.salary += gross;
                     if (category === 'public_pension') entry.publicPension += gross;
+                    if (category === 'retirement') entry.retirement += gross;
                     personPolicyTaxInputs[person.id] = entry;
                 }
             }
@@ -423,7 +561,7 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     const spousePerson = people.find(p => p.relation === 'spouse');
                     if (spousePerson) {
                         const spouseAge = age - (spousePerson.birthYear - self.birthYear);
-                        const entry = personPolicyTaxInputs[spousePerson.id] || { age: spouseAge, salary: 0, publicPension: 0 };
+                        const entry = personPolicyTaxInputs[spousePerson.id] || { age: spouseAge, salary: 0, publicPension: 0, retirement: 0 };
                         entry.age = spouseAge;
                         entry.publicPension += survivorPension;
                         personPolicyTaxInputs[spousePerson.id] = entry;
@@ -439,15 +577,71 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     if (isDead && person.relation === 'self') return;
                     const personAge = age - (person.birthYear - self.birthYear);
                     if (!personPolicyTaxInputs[person.id]) {
-                        personPolicyTaxInputs[person.id] = { age: personAge, salary: 0, publicPension: 0 };
+                        personPolicyTaxInputs[person.id] = { age: personAge, salary: 0, publicPension: 0, retirement: 0 };
                     }
                 });
             }
-            Object.values(personPolicyTaxInputs).forEach(input => {
+            const selfPerson = people.find(p => p.relation === 'self');
+            const spousePerson = people.find(p => p.relation === 'spouse');
+            const primaryTaxpayerId = (!isDead && selfPerson)
+                ? selfPerson.id
+                : (spousePerson?.id || selfPerson?.id || null);
+            const additionalDeductionsByPersonYen: Record<string, number> = {};
+            if (primaryTaxpayerId) {
+                additionalDeductionsByPersonYen[primaryTaxpayerId] =
+                    Math.max(0, policyContext.deductionSpouseYen ?? 0) +
+                    Math.max(0, policyContext.deductionMedicalYen ?? 0) +
+                    Math.max(0, policyContext.deductionOtherYen ?? 0);
+            }
+
+            if (policyContext.autoSpouseDeductionEnabled !== false && selfPerson && spousePerson) {
+                if (!isDead) {
+                    const selfInput = personPolicyTaxInputs[selfPerson.id];
+                    const spouseInput = personPolicyTaxInputs[spousePerson.id];
+                    if (selfInput && spouseInput) {
+                        const spouseDeductionForSelf = getSpouseDeductionYen(
+                            spouseInput.salary + spouseInput.publicPension,
+                            selfInput.salary + selfInput.publicPension
+                        );
+                        if (spouseDeductionForSelf > 0) {
+                            additionalDeductionsByPersonYen[selfPerson.id] =
+                                (additionalDeductionsByPersonYen[selfPerson.id] || 0) + spouseDeductionForSelf;
+                        }
+                        const spouseDeductionForSpouse = getSpouseDeductionYen(
+                            selfInput.salary + selfInput.publicPension,
+                            spouseInput.salary + spouseInput.publicPension
+                        );
+                        if (spouseDeductionForSpouse > 0) {
+                            additionalDeductionsByPersonYen[spousePerson.id] =
+                                (additionalDeductionsByPersonYen[spousePerson.id] || 0) + spouseDeductionForSpouse;
+                        }
+                    }
+                }
+            }
+
+            if (policyContext.autoDependentDeductionEnabled !== false) {
+                const dependentDeductionYen = people.reduce((sum, person) => {
+                    if (person.relation !== 'child') return sum;
+                    const childInput = personPolicyTaxInputs[person.id];
+                    const childIncomeManYen = (childInput?.salary || 0) + (childInput?.publicPension || 0);
+                    if (childIncomeManYen > 103) return sum;
+                    const childAge = currentYear - person.birthYear;
+                    return sum + getDependentDeductionYen(childAge);
+                }, 0);
+                if (dependentDeductionYen > 0 && primaryTaxpayerId) {
+                    additionalDeductionsByPersonYen[primaryTaxpayerId] =
+                        (additionalDeductionsByPersonYen[primaryTaxpayerId] || 0) + dependentDeductionYen;
+                }
+            }
+
+            Object.entries(personPolicyTaxInputs).forEach(([personId, input]) => {
                 const estimated = estimateAnnualTaxAndSocialInsurance({
                     annualSalaryIncomeManYen: input.salary,
                     annualPublicPensionIncomeManYen: input.publicPension,
+                    annualRetirementIncomeManYen: input.retirement,
                     age: input.age,
+                    additionalDeductionYen: Math.max(0, additionalDeductionsByPersonYen[personId] || 0),
+                    retirementYearsOfService: Math.max(1, Math.floor(policyContext.retirementYearsOfService ?? 30)),
                     context: policyContext
                 });
                 expense.tax += estimated.annualTaxManYen;
@@ -565,6 +759,8 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
 
         // --- Assets Management ---
         const yearContributions: Record<string, number> = {};
+        const yearNisaContributions: Record<string, number> = {};
+        const yearTaxableContributions: Record<string, number> = {};
         contributions.forEach(c => {
             if (age >= c.startAge && age <= c.endAge) {
                 const annualAmount = (c.amount * (c.frequency === 'monthly' ? 12 : 1));
@@ -578,6 +774,19 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     })
                     : annualAmount;
                 yearContributions[c.assetId] = (yearContributions[c.assetId] || 0) + amount;
+                if (asset?.type === 'investment') {
+                    const isNisaContribution = c.name.toLowerCase().includes('nisa');
+                    if (isNisaContribution) {
+                        const remainingNisaLifetime = Math.max(0, nisaLifetimeLimitManYen - nisaLifetimeUsedManYen);
+                        const nisaAmount = Math.min(amount, remainingNisaLifetime);
+                        const taxableAmount = amount - nisaAmount;
+                        yearNisaContributions[c.assetId] = (yearNisaContributions[c.assetId] || 0) + nisaAmount;
+                        yearTaxableContributions[c.assetId] = (yearTaxableContributions[c.assetId] || 0) + taxableAmount;
+                        nisaLifetimeUsedManYen += nisaAmount;
+                    } else {
+                        yearTaxableContributions[c.assetId] = (yearTaxableContributions[c.assetId] || 0) + amount;
+                    }
+                }
                 expense.investment += amount;
             }
         });
@@ -591,6 +800,22 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
 
         // Apply Interest & Contributions
         currentAssets.forEach(asset => {
+            if (asset.type === 'investment') {
+                const nisaBalance = investmentNisaBalance[asset.id] || 0;
+                const taxableBalance = investmentTaxableBalance[asset.id] || 0;
+                const nisaGain = nisaBalance * (asset.rate / 100);
+                const taxableGainGross = taxableBalance * (asset.rate / 100);
+                const taxableGainTax = taxableGainGross > 0 ? taxableGainGross * investmentTaxRate : 0;
+                const taxableGainNet = taxableGainGross - taxableGainTax;
+                expense.tax += taxableGainTax;
+
+                const nisaContrib = yearNisaContributions[asset.id] || 0;
+                const taxableContrib = yearTaxableContributions[asset.id] || 0;
+                investmentNisaBalance[asset.id] = nisaBalance + nisaGain + nisaContrib;
+                investmentTaxableBalance[asset.id] = taxableBalance + taxableGainNet + taxableContrib;
+                asset.balance = investmentNisaBalance[asset.id] + investmentTaxableBalance[asset.id];
+                return;
+            }
             const interest = asset.balance * (asset.rate / 100);
             asset.balance += interest;
             const contrib = yearContributions[asset.id] || 0;
@@ -613,9 +838,9 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                 let investmentWithdrawalTotal = 0;
                 for (const inv of investments) {
                     if (deficit <= 0) break;
-                    const taken = Math.min(inv.balance, deficit);
+                    const taken = reduceInvestmentBuckets(inv.id, deficit);
                     if (taken > 0) {
-                        inv.balance -= taken;
+                        inv.balance = (investmentNisaBalance[inv.id] || 0) + (investmentTaxableBalance[inv.id] || 0);
                         deficit -= taken;
                         investmentWithdrawalTotal += taken;
                     }
@@ -651,7 +876,12 @@ export const calculateSimulation = (data: ProjectData): AnnualResult[] => {
                     const amount = ta.balance;
                     if (amount > 0) {
                         cashAsset.balance += amount;
-                        ta.balance = 0;
+                        if (type === 'investment') {
+                            reduceInvestmentBuckets(ta.id, amount);
+                            ta.balance = (investmentNisaBalance[ta.id] || 0) + (investmentTaxableBalance[ta.id] || 0);
+                        } else {
+                            ta.balance = 0;
+                        }
                         income.assetWithdrawal += amount;
                         financing.assetTransfer += amount;
                     }

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useStore } from '../../store';
 import { Save, Download, ChevronUp, Trash2, Upload, FileJson, AlertCircle, CheckCircle } from 'lucide-react';
-import { ProjectData } from '../../types';
+import { ProjectData, EducationStage } from '../../types';
 
 // Simple validation for imported JSON
 const validateProjectData = (data: unknown): data is ProjectData => {
@@ -70,8 +70,75 @@ const HEALTH_INSURANCE_REGION_OPTIONS: Array<{ value: string; label: string }> =
     { value: 'okinawa', label: '沖縄（協会けんぽ）' }
 ];
 
+const EDUCATION_STAGE_CATEGORY_OPTIONS: Record<string, string[]> = {
+    preschool_0_3: ['認可', '認可外', '幼稚園', 'その他'],
+    preschool_4_6: ['認可', '認可外', '幼稚園', 'その他'],
+    elementary: ['公立', '私立'],
+    junior_high: ['公立', '私立'],
+    high_school: ['公立', '私立(支援考慮)', '私立(満額負担寄り)'],
+    university: ['国公立', '私立文系', '私立理系', 'その他'],
+    university_commute: ['自宅', '下宿', 'その他']
+};
+
+const EDUCATION_STAGE_PRESET_TOTALS: Record<string, Record<string, number>> = {
+    preschool_0_3: {
+        '認可': 180,
+        '認可外': 360,
+        '幼稚園': 180,
+        'その他': 180
+    },
+    preschool_4_6: {
+        '認可': 78,
+        '認可外': 180,
+        '幼稚園': 120,
+        'その他': 78
+    },
+    elementary: {
+        '公立': 180,
+        '私立': 610
+    },
+    junior_high: {
+        '公立': 180,
+        '私立': 304
+    },
+    high_school: {
+        '公立': 150,
+        '私立(支援考慮)': 150,
+        '私立(満額負担寄り)': 311
+    },
+    university: {
+        '国公立': 600,
+        '私立文系': 629,
+        '私立理系': 800,
+        'その他': 629
+    },
+    university_commute: {
+        '自宅': 144,
+        '下宿': 480,
+        'その他': 144
+    }
+};
+
+const getEducationStagePresetTotal = (stageId: string, category: string): number => {
+    return EDUCATION_STAGE_PRESET_TOTALS[stageId]?.[category] ?? 0;
+};
+
+const DEFAULT_EDUCATION_STAGES: EducationStage[] = [
+    { id: 'preschool_0_3', name: '保育園/幼稚園', category: '認可', startAge: 0, endAge: 3, totalAmount: undefined },
+    { id: 'preschool_4_6', name: '保育園/幼稚園', category: '認可', startAge: 4, endAge: 6, totalAmount: undefined },
+    { id: 'elementary', name: '小学校', category: '公立', startAge: 7, endAge: 12, totalAmount: undefined },
+    { id: 'junior_high', name: '中学校', category: '公立', startAge: 13, endAge: 15, totalAmount: undefined },
+    { id: 'high_school', name: '高校', category: '公立', startAge: 16, endAge: 18, totalAmount: undefined },
+    { id: 'university', name: '大学', category: '国公立', startAge: 19, endAge: 22, totalAmount: undefined },
+    { id: 'university_commute', name: '通学区分', category: '自宅', startAge: 19, endAge: 22, totalAmount: undefined }
+];
+
+const cloneDefaultEducationStages = (): EducationStage[] =>
+    DEFAULT_EDUCATION_STAGES.map((stage) => ({ ...stage }));
+
 export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => {
     const data = useStore((state) => state.data);
+    const results = useStore((state) => state.results);
     const updateData = useStore((state) => state.updateData);
     const importData = useStore((state) => state.importData);
     const recalc = useStore((state) => state.recalc);
@@ -200,8 +267,8 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         lines.push('');
 
         lines.push('[EducationPlans]');
-        lines.push('childId\ttemplateName\ttotalAmountOverride');
-        data.educationPlans.forEach(p => lines.push(`${p.childId}\t${p.templateName ?? ''}\t${p.totalAmountOverride ?? ''}`));
+        lines.push('childId\ttemplateName\ttotalAmountOverride\tstagesJson');
+        data.educationPlans.forEach(p => lines.push(`${p.childId}\t${p.templateName ?? ''}\t${p.totalAmountOverride ?? ''}\t${JSON.stringify(p.stages ?? [])}`));
         lines.push('');
 
         lines.push('[Housing]');
@@ -221,6 +288,149 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
         const a = document.createElement('a');
         a.href = url;
         a.download = `life-plan-params-${new Date().toISOString().split('T')[0]}.txt`;
+        a.click();
+    };
+
+    const exportAiMarkdown = async () => {
+        const lines: string[] = [];
+        const now = new Date();
+        const recurringDeficit = results.find(r => r.cashflow.recurringBalance < 0);
+        const finalDeficit = results.find(r => r.cashflow.finalNet < 0);
+        const assetDepletion = results.find(r => r.assets.total <= 0);
+        const retirement60 = results.find(r => r.age >= 60);
+        const retirement65 = results.find(r => r.age >= 65);
+        const finalYear = results[results.length - 1];
+        const minAsset = results.reduce((min, r) => Math.min(min, r.assets.total), Number.POSITIVE_INFINITY);
+        const maxTax = results.reduce((max, r) => Math.max(max, r.expense.tax), 0);
+        const maxSocialInsurance = results.reduce((max, r) => Math.max(max, r.expense.socialInsurance), 0);
+
+        // 外部ファイルからプロンプトテンプレートを読み込む
+        let promptTemplate = "";
+        try {
+            const response = await fetch('/ai_prompt_template.md');
+            if (response.ok) {
+                promptTemplate = await response.text();
+            }
+        } catch (error) {
+            console.error('Failed to load prompt template:', error);
+        }
+
+        if (promptTemplate) {
+            lines.push(promptTemplate.trim());
+            lines.push('');
+        } else {
+            // フォールバック: 元のハードコードされた内容
+            lines.push('# Life2Sim AI相談用データ');
+            lines.push('');
+            lines.push('## 推奨プロンプト');
+            lines.push('');
+            lines.push('以下のライフシミュレーション設定と結果を読み取り、家計・資産形成・住宅・教育費・働き方・老後資金の観点から分析してください。');
+            lines.push('特に次の点を重視してください。');
+            lines.push('');
+            lines.push('1. 年ごとの赤字そのものは問題視しすぎず、資産合計が0円以下になるリスクを中心に見てください');
+            lines.push('2. 何歳ごろに、どの要因で資産が大きく減りやすいかを特定してください');
+            lines.push('3. 資産が0円以下にならないための改善案を、効果の大きい順に3〜5個提示してください');
+            lines.push('4. 住宅予算、働き方、教育費、投資積立、老後支出のうち、どこを動かすのが最も効率的かを示してください');
+            lines.push('5. 単年赤字よりも、累積資産の維持・老後の資産寿命の延長を重視してください');
+            lines.push('6. 追加で確認すべき入力値や制度前提も挙げてください');
+            lines.push('');
+            lines.push('回答は、');
+            lines.push('- まず資産が減る主要局面');
+            lines.push('- 次に資産が尽きないための改善案を優先順位順');
+            lines.push('- 最後に前提の不確実性');
+            lines.push('の順で整理してください。');
+            lines.push('');
+            lines.push('## AIへの依頼');
+            lines.push('');
+            lines.push('以下はライフシミュレーションの設定値と結果です。');
+            lines.push('年ごとの赤字は許容しつつ、資産合計が0円以下にならないことを重視したいです。');
+            lines.push('家計・資産形成・住宅・働き方・老後資金の観点から、資産寿命を伸ばすための弱点、改善案、前提の見直しポイントを分析してください。');
+            lines.push('特に、どの年齢帯で資産が削られやすいか、どの設定変更が最も効きやすいかを重視して評価してください。');
+            lines.push('');
+        }
+        lines.push('## 出力日時');
+        lines.push('');
+        lines.push(`- ${now.toISOString()}`);
+        lines.push('');
+        lines.push('## サマリー');
+        lines.push('');
+        lines.push(`- シミュレーション期間: ${data.settings.startAge}歳〜${data.settings.endAge}歳`);
+        lines.push(`- 結果年数: ${results.length}年`);
+        lines.push(`- 最終資産合計: ${finalYear ? finalYear.assets.total.toFixed(1) : 'N/A'}万円`);
+        lines.push(`- 最小資産合計: ${Number.isFinite(minAsset) ? minAsset.toFixed(1) : 'N/A'}万円`);
+        lines.push(`- 経常収支が初めて赤字になる年齢: ${recurringDeficit ? `${recurringDeficit.age}歳 (${recurringDeficit.year}年)` : 'なし'}`);
+        lines.push(`- 最終収支が初めて赤字になる年齢: ${finalDeficit ? `${finalDeficit.age}歳 (${finalDeficit.year}年)` : 'なし'}`);
+        lines.push(`- 資産合計が0以下になる年齢: ${assetDepletion ? `${assetDepletion.age}歳 (${assetDepletion.year}年)` : 'なし'}`);
+        lines.push(`- 60歳時点の資産合計: ${retirement60 ? `${retirement60.assets.total.toFixed(1)}万円` : 'N/A'}`);
+        lines.push(`- 65歳時点の資産合計: ${retirement65 ? `${retirement65.assets.total.toFixed(1)}万円` : 'N/A'}`);
+        lines.push(`- 年間税額の最大値: ${maxTax.toFixed(1)}万円`);
+        lines.push(`- 年間社会保険料の最大値: ${maxSocialInsurance.toFixed(1)}万円`);
+        lines.push('');
+        lines.push('## 設定値(JSON)');
+        lines.push('');
+        lines.push('```json');
+        lines.push(JSON.stringify(data, null, 2));
+        lines.push('```');
+        lines.push('');
+        lines.push('## 年次結果サマリー(TSV)');
+        lines.push('');
+        lines.push('```tsv');
+        lines.push([
+            'year',
+            'age',
+            'income_total',
+            'recurring_income',
+            'recurring_expense',
+            'recurring_balance',
+            'one_time_net',
+            'financing_in',
+            'final_net',
+            'tax',
+            'social_insurance',
+            'assets_total',
+            'assets_short',
+            'assets_medium',
+            'assets_long'
+        ].join('\t'));
+        results.forEach((r) => {
+            lines.push([
+                r.year,
+                r.age,
+                r.income.total.toFixed(1),
+                r.cashflow.recurringIncome.toFixed(1),
+                r.cashflow.recurringExpense.toFixed(1),
+                r.cashflow.recurringBalance.toFixed(1),
+                r.cashflow.oneTimeNet.toFixed(1),
+                r.cashflow.financingIn.toFixed(1),
+                r.cashflow.finalNet.toFixed(1),
+                r.expense.tax.toFixed(1),
+                r.expense.socialInsurance.toFixed(1),
+                r.assets.total.toFixed(1),
+                r.assets.shortTerm.toFixed(1),
+                r.assets.mediumTerm.toFixed(1),
+                r.assets.longTerm.toFixed(1)
+            ].join('\t'));
+        });
+        lines.push('```');
+        lines.push('');
+        lines.push('## 注目年の詳細(JSON)');
+        lines.push('');
+        lines.push('```json');
+        lines.push(JSON.stringify({
+            recurringDeficit,
+            finalDeficit,
+            assetDepletion,
+            retirement60,
+            retirement65,
+            finalYear
+        }, null, 2));
+        lines.push('```');
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `life-plan-ai-review-${new Date().toISOString().split('T')[0]}.md`;
         a.click();
     };
 
@@ -266,6 +476,9 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                 </button>
                 <button onClick={exportText} className="flex items-center justify-center gap-2 p-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors">
                     <Download size={16} /> TXTで書き出し
+                </button>
+                <button onClick={exportAiMarkdown} className="flex items-center justify-center gap-2 p-2 border border-indigo-300 text-indigo-700 rounded hover:bg-indigo-50 transition-colors md:col-span-2">
+                    <Download size={16} /> AI相談用 Markdown を出力
                 </button>
             </div>
             {importStatus && (
@@ -344,7 +557,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                     }],
                                     educationPlans: [
                                         ...d.educationPlans,
-                                        { childId: newId, templateName: 'default', totalAmountOverride: 0 }
+                                        { childId: newId, templateName: 'default', totalAmountOverride: 0, stages: cloneDefaultEducationStages() }
                                     ]
                                 };
                             })}
@@ -512,6 +725,7 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     <option value="private_pension">私的年金</option>
                                                     <option value="individual_pension">個人年金</option>
                                                     <option value="child_allowance">手当</option>
+                                                    <option value="retirement">退職金</option>
                                                     <option value="other">その他</option>
                                                 </select>
                                             </td>
@@ -1457,30 +1671,151 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                     <div className="flex flex-col mb-6">
                         <h3 className="text-lg font-display font-bold text-slate-800">教育費設定</h3>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Education Planning</p>
+                        <p className="mt-2 text-[11px] text-gray-400">段階別教育費のみ対応します。参考値は自動上書きせず、ボタンで入力します。高校の私立初期値は、現行の就学支援金制度を踏まえて `私立(支援考慮)` と `私立(満額負担寄り)` を分けています。</p>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         {data.educationPlans.map((plan) => {
                             const child = data.people.find(p => p.id === plan.childId);
+                            const stages = plan.stages && plan.stages.length > 0 ? plan.stages : cloneDefaultEducationStages();
+                            const detailedTotal = stages.reduce((sum, stage) => sum + (stage.totalAmount || 0), 0);
                             return (
-                                <div key={plan.childId} className="bg-white p-3 rounded-lg border shadow-sm flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <label className="text-xs text-gray-400">対象の子</label>
-                                        <p className="font-medium text-gray-800">{child?.name || '不明'}</p>
+                                <div key={plan.childId} className="bg-white p-4 rounded-lg border shadow-sm space-y-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-gray-400">対象の子</label>
+                                            <p className="font-medium text-gray-800">{child?.name || '不明'}</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[11px] text-gray-500">
+                                                    詳細合計: {detailedTotal.toLocaleString()} 万円
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="w-32">
-                                        <label htmlFor={`education-total-${plan.childId}`} className="text-xs text-gray-400">累計教育費(万円)</label>
-                                        <input
-                                            id={`education-total-${plan.childId}`}
-                                            type="number"
-                                            className="w-full text-sm border-gray-200 rounded mt-1"
-                                            name={`education-total-${plan.childId}`}
-                                            autoComplete="off"
-                                            value={plan.totalAmountOverride || 0}
-                                            onChange={(e) => updateData(d => ({
-                                                ...d,
-                                                educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId ? { ...ep, totalAmountOverride: Number(e.target.value) } : ep)
-                                            }))}
-                                        />
+
+                                    <div className="space-y-3">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[760px] text-sm border rounded-lg overflow-hidden">
+                                                <thead className="bg-gray-50 text-xs text-gray-500">
+                                                    <tr>
+                                                        <th className="px-3 py-2 text-left">区分</th>
+                                                        <th className="px-3 py-2 text-left">開始</th>
+                                                        <th className="px-3 py-2 text-left">終了</th>
+                                                        <th className="px-3 py-2 text-left">種別</th>
+                                                        <th className="px-3 py-2 text-left">累計額(万円)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y">
+                                                    {stages.map((stage) => (
+                                                        <tr key={`${plan.childId}-${stage.id}`} className="hover:bg-gray-50">
+                                                            <td className="px-3 py-2 font-medium text-gray-700">{stage.name}</td>
+                                                            <td className="px-3 py-2 w-20">
+                                                                <input
+                                                                    type="number"
+                                                                    className="w-full border-gray-200 rounded"
+                                                                    name={`education-stage-start-${plan.childId}-${stage.id}`}
+                                                                    value={stage.startAge}
+                                                                    onChange={(e) => updateData(d => ({
+                                                                        ...d,
+                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
+                                                                            ? {
+                                                                                ...ep,
+                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id ? { ...s, startAge: Number(e.target.value) } : s)
+                                                                            }
+                                                                            : ep)
+                                                                    }))}
+                                                                />
+                                                            </td>
+                                                            <td className="px-3 py-2 w-20">
+                                                                <input
+                                                                    type="number"
+                                                                    className="w-full border-gray-200 rounded"
+                                                                    name={`education-stage-end-${plan.childId}-${stage.id}`}
+                                                                    value={stage.endAge}
+                                                                    onChange={(e) => updateData(d => ({
+                                                                        ...d,
+                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
+                                                                            ? {
+                                                                                ...ep,
+                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id ? { ...s, endAge: Number(e.target.value) } : s)
+                                                                            }
+                                                                            : ep)
+                                                                    }))}
+                                                                />
+                                                            </td>
+                                                            <td className="px-3 py-2 w-40">
+                                                                <select
+                                                                    className="w-full border-gray-200 rounded"
+                                                                    name={`education-stage-category-${plan.childId}-${stage.id}`}
+                                                                    value={stage.category || ''}
+                                                                    onChange={(e) => updateData(d => ({
+                                                                        ...d,
+                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
+                                                                            ? {
+                                                                                ...ep,
+                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id
+                                                                                    ? {
+                                                                                        ...s,
+                                                                                        category: e.target.value,
+                                                                                        totalAmount: getEducationStagePresetTotal(stage.id, e.target.value)
+                                                                                    }
+                                                                                    : s)
+                                                                            }
+                                                                            : ep)
+                                                                    }))}
+                                                                >
+                                                                    {(EDUCATION_STAGE_CATEGORY_OPTIONS[stage.id] || ['その他']).map((option) => (
+                                                                        <option key={option} value={option}>{option}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2 w-36">
+                                                                <input
+                                                                    type="number"
+                                                                    className="w-full border-gray-200 rounded"
+                                                                    name={`education-stage-amount-${plan.childId}-${stage.id}`}
+                                                                    value={stage.totalAmount ?? ''}
+                                                                    placeholder={`${getEducationStagePresetTotal(stage.id, stage.category || '')}`}
+                                                                    onChange={(e) => updateData(d => ({
+                                                                        ...d,
+                                                                        educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
+                                                                            ? {
+                                                                                ...ep,
+                                                                                stages: (ep.stages || stages).map(s => s.id === stage.id
+                                                                                    ? {
+                                                                                        ...s,
+                                                                                        totalAmount: e.target.value === '' ? undefined : Number(e.target.value)
+                                                                                    }
+                                                                                    : s)
+                                                                            }
+                                                                            : ep)
+                                                                    }))}
+                                                                    onBlur={(e) => {
+                                                                        if (e.target.value !== '') return;
+                                                                        const preset = getEducationStagePresetTotal(stage.id, stage.category || '');
+                                                                        updateData(d => ({
+                                                                            ...d,
+                                                                            educationPlans: d.educationPlans.map(ep => ep.childId === plan.childId
+                                                                                ? {
+                                                                                    ...ep,
+                                                                                    stages: (ep.stages || stages).map(s => s.id === stage.id ? { ...s, totalAmount: preset } : s)
+                                                                                }
+                                                                                : ep)
+                                                                        }));
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <p className="text-[11px] text-gray-400">各区分の累計額を、その年齢レンジに均等配分して年次教育費へ反映します。種別を変更した時、または累計額を空欄で抜けた時は参考値を自動入力します。結婚援助額はここには含めません。</p>
+                                            <div className="text-right">
+                                                <p className="text-[11px] text-gray-400">段階別教育費の合計</p>
+                                                <p className="text-sm font-semibold text-gray-800">{detailedTotal.toLocaleString()} 万円</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -1945,6 +2280,69 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                         />
                                     </div>
                                     <div>
+                                        <label htmlFor="settings-policy-investment-tax-rate" className="text-xs text-gray-500">運用益課税率(特定口座)</label>
+                                        <input
+                                            id="settings-policy-investment-tax-rate"
+                                            type="number"
+                                            step="0.00001"
+                                            min="0"
+                                            max="1"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-investment-tax-rate"
+                                            value={data.settings.policy?.investmentTaxRate ?? 0.20315}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        investmentTaxRate: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-nisa-lifetime-limit" className="text-xs text-gray-500">NISA生涯枠(万円)</label>
+                                        <input
+                                            id="settings-policy-nisa-lifetime-limit"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-nisa-lifetime-limit"
+                                            value={data.settings.policy?.nisaLifetimeLimitManYen ?? 1800}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        nisaLifetimeLimitManYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="settings-policy-nisa-lifetime-used" className="text-xs text-gray-500">NISA既使用枠(万円)</label>
+                                        <input
+                                            id="settings-policy-nisa-lifetime-used"
+                                            type="number"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-nisa-lifetime-used"
+                                            value={data.settings.policy?.nisaLifetimeUsedManYen ?? 0}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        nisaLifetimeUsedManYen: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <div>
                                         <label htmlFor="settings-policy-bonus-ratio" className="text-xs text-gray-500">給与中の賞与比率(0-1)</label>
                                         <input
                                             id="settings-policy-bonus-ratio"
@@ -1987,6 +2385,48 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                 }
                                             }))}
                                         />
+                                    </div>
+                                    <label htmlFor="settings-policy-public-pension-auto" className="flex items-center gap-2 text-xs text-gray-600">
+                                        <input
+                                            id="settings-policy-public-pension-auto"
+                                            type="checkbox"
+                                            name="settings-policy-public-pension-auto"
+                                            checked={data.settings.policy?.publicPensionAutoCalculationEnabled !== false}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        publicPensionAutoCalculationEnabled: e.target.checked
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                        公的年金を自動計算
+                                    </label>
+                                    <div>
+                                        <label htmlFor="settings-policy-public-pension-claim-age" className="text-xs text-gray-500">年金受給開始年齢</label>
+                                        <input
+                                            id="settings-policy-public-pension-claim-age"
+                                            type="number"
+                                            min="60"
+                                            max="75"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-public-pension-claim-age"
+                                            value={data.settings.policy?.publicPensionClaimAge ?? 65}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        publicPensionClaimAge: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                        <p className="mt-1 text-[11px] text-gray-400">老齢基礎年金/老齢厚生年金(見込) を概算で自動上書き</p>
                                     </div>
                                     <div>
                                         <label htmlFor="settings-policy-ideco-category" className="text-xs text-gray-500">iDeCo区分</label>
@@ -2132,6 +2572,65 @@ export const DataEditor: React.FC<DataEditorProps> = ({ isSidebar = false }) => 
                                                     policy: {
                                                         ...d.settings.policy,
                                                         nationalPensionEndAge: Number(e.target.value)
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    </div>
+                                    <label htmlFor="settings-policy-auto-spouse-deduction" className="flex items-center gap-2 text-xs text-gray-600">
+                                        <input
+                                            id="settings-policy-auto-spouse-deduction"
+                                            type="checkbox"
+                                            name="settings-policy-auto-spouse-deduction"
+                                            checked={data.settings.policy?.autoSpouseDeductionEnabled !== false}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        autoSpouseDeductionEnabled: e.target.checked
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                        配偶者控除を自動判定
+                                    </label>
+                                    <label htmlFor="settings-policy-auto-dependent-deduction" className="flex items-center gap-2 text-xs text-gray-600">
+                                        <input
+                                            id="settings-policy-auto-dependent-deduction"
+                                            type="checkbox"
+                                            name="settings-policy-auto-dependent-deduction"
+                                            checked={data.settings.policy?.autoDependentDeductionEnabled !== false}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        autoDependentDeductionEnabled: e.target.checked
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                        扶養控除を自動判定
+                                    </label>
+                                    <div>
+                                        <label htmlFor="settings-policy-retirement-years" className="text-xs text-gray-500">退職所得控除 勤続年数</label>
+                                        <input
+                                            id="settings-policy-retirement-years"
+                                            type="number"
+                                            min="1"
+                                            className="w-full text-sm border-gray-200 rounded mt-1"
+                                            name="settings-policy-retirement-years"
+                                            value={data.settings.policy?.retirementYearsOfService ?? 30}
+                                            onChange={(e) => updateData(d => ({
+                                                ...d,
+                                                settings: {
+                                                    ...d.settings,
+                                                    policy: {
+                                                        ...d.settings.policy,
+                                                        retirementYearsOfService: Number(e.target.value)
                                                     }
                                                 }
                                             }))}

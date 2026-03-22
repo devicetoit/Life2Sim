@@ -6,6 +6,9 @@ const defaultPolicy: NonNullable<SimulationSettings['policy']> = {
     employmentInsuranceBusinessType: 'general',
     residentTaxPerCapitaYen: 5000,
     residentTaxPerCapitaExtraYen: 0,
+    investmentTaxRate: 0.20315,
+    nisaLifetimeLimitManYen: 1800,
+    nisaLifetimeUsedManYen: 0,
     salaryBonusRatio: 0,
     bonusPaymentsPerYear: 2,
     socialInsuranceModel: 'employee',
@@ -15,9 +18,14 @@ const defaultPolicy: NonNullable<SimulationSettings['policy']> = {
     nationalPensionMonthlyYen: 0,
     nationalPensionStartAge: 20,
     nationalPensionEndAge: 59,
+    autoSpouseDeductionEnabled: true,
+    autoDependentDeductionEnabled: true,
+    retirementYearsOfService: 30,
     deductionSpouseYen: 0,
     deductionMedicalYen: 0,
     deductionOtherYen: 0,
+    publicPensionAutoCalculationEnabled: true,
+    publicPensionClaimAge: 65,
     idecoCategory: 'company_employee_no_corporate_pension'
 };
 

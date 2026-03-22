@@ -15,6 +15,9 @@ export interface PolicyContext {
     employmentInsuranceBusinessType?: 'general' | 'agriculture_forestry_fisheries_sake' | 'construction';
     residentTaxPerCapitaYen?: number;
     residentTaxPerCapitaExtraYen?: number;
+    investmentTaxRate?: number;
+    nisaLifetimeLimitManYen?: number;
+    nisaLifetimeUsedManYen?: number;
     salaryBonusRatio?: number;
     bonusPaymentsPerYear?: number;
     socialInsuranceModel?: 'employee' | 'national';
@@ -24,13 +27,20 @@ export interface PolicyContext {
     nationalPensionMonthlyYen?: number;
     nationalPensionStartAge?: number;
     nationalPensionEndAge?: number;
+    autoSpouseDeductionEnabled?: boolean;
+    autoDependentDeductionEnabled?: boolean;
+    retirementYearsOfService?: number;
     deductionSpouseYen?: number;
     deductionMedicalYen?: number;
     deductionOtherYen?: number;
+    publicPensionAutoCalculationEnabled?: boolean;
+    publicPensionClaimAge?: number;
     idecoCategory?: IdecoCategory;
 }
 
 const MAN_YEN_TO_YEN = 10000;
+const FULL_BASIC_PENSION_COVERAGE_MONTHS = 480;
+const EMPLOYEE_PENSION_ACCRUAL_RATE = 0.005481;
 const floorToUnit = (value: number, unit: number): number => Math.floor(value / unit) * unit;
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
@@ -80,6 +90,29 @@ const getIncomeTaxBaseYen = (taxableIncomeYen: number): number => {
         }
     }
     return 0;
+};
+
+const getRetirementIncomeDeductionYen = (yearsOfService: number): number => {
+    const years = Math.max(1, Math.floor(yearsOfService));
+    if (years <= 20) {
+        return Math.max(800000, years * 400000);
+    }
+    return 8000000 + ((years - 20) * 700000);
+};
+
+const estimateRetirementTaxYen = (params: {
+    retirementIncomeYen: number;
+    yearsOfService: number;
+    residentTaxRate?: number;
+}): number => {
+    const incomeYen = Math.max(0, params.retirementIncomeYen);
+    if (incomeYen <= 0) return 0;
+    const deductionYen = getRetirementIncomeDeductionYen(params.yearsOfService);
+    const taxableRetirementIncomeYen = Math.max(0, (incomeYen - deductionYen) / 2);
+    const incomeTaxBaseYen = Math.max(0, getIncomeTaxBaseYen(taxableRetirementIncomeYen));
+    const reconstructionTaxYen = incomeTaxBaseYen * taxRules.income_tax.reconstruction_surtax_rate;
+    const residentTaxYen = taxableRetirementIncomeYen * (params.residentTaxRate ?? taxRules.resident_tax.standard_income_levy_rate);
+    return incomeTaxBaseYen + reconstructionTaxYen + residentTaxYen;
 };
 
 const estimateEmployeeSocialInsuranceYen = (params: {
@@ -162,11 +195,15 @@ const estimateEmployeeSocialInsuranceYen = (params: {
 export const estimateAnnualTaxAndSocialInsurance = (params: {
     annualSalaryIncomeManYen: number;
     annualPublicPensionIncomeManYen: number;
+    annualRetirementIncomeManYen?: number;
     age: number;
+    additionalDeductionYen?: number;
+    retirementYearsOfService?: number;
     context?: PolicyContext;
 }): { annualTaxManYen: number; annualSocialInsuranceManYen: number } => {
     const annualSalaryIncomeYen = params.annualSalaryIncomeManYen * MAN_YEN_TO_YEN;
     const annualPublicPensionIncomeYen = params.annualPublicPensionIncomeManYen * MAN_YEN_TO_YEN;
+    const annualRetirementIncomeYen = (params.annualRetirementIncomeManYen ?? 0) * MAN_YEN_TO_YEN;
 
     const salaryIncomeAmountYen = Math.max(0, annualSalaryIncomeYen - getSalaryIncomeDeductionYen(annualSalaryIncomeYen));
     const pensionIncomeAmountYen = Math.max(0, annualPublicPensionIncomeYen - getPublicPensionDeductionYen(annualPublicPensionIncomeYen, params.age));
@@ -178,9 +215,7 @@ export const estimateAnnualTaxAndSocialInsurance = (params: {
         context: params.context
     });
     const additionalDeductionsYen =
-        Math.max(0, params.context?.deductionSpouseYen ?? 0) +
-        Math.max(0, params.context?.deductionMedicalYen ?? 0) +
-        Math.max(0, params.context?.deductionOtherYen ?? 0);
+        Math.max(0, params.additionalDeductionYen ?? 0);
     const basicDeductionYen = getBasicDeductionYen(totalIncomeAmountYen);
     const taxableIncomeYen = Math.max(0, totalIncomeAmountYen - basicDeductionYen - additionalDeductionsYen - annualSocialInsuranceYen);
 
@@ -191,7 +226,12 @@ export const estimateAnnualTaxAndSocialInsurance = (params: {
             ?? (taxRules.resident_tax.per_capita_yen_default + taxRules.resident_tax.forest_environment_tax_yen_default))
         + Math.max(0, params.context?.residentTaxPerCapitaExtraYen ?? 0);
     const residentTaxYen = taxableIncomeYen * taxRules.resident_tax.standard_income_levy_rate + residentTaxPerCapitaYen;
-    const annualTaxYen = incomeTaxBaseYen + reconstructionTaxYen + residentTaxYen;
+    const retirementTaxYen = estimateRetirementTaxYen({
+        retirementIncomeYen: annualRetirementIncomeYen,
+        yearsOfService: Math.max(1, Math.floor(params.retirementYearsOfService ?? params.context?.retirementYearsOfService ?? 30)),
+        residentTaxRate: taxRules.resident_tax.standard_income_levy_rate
+    });
+    const annualTaxYen = incomeTaxBaseYen + reconstructionTaxYen + residentTaxYen + retirementTaxYen;
 
     return {
         annualTaxManYen: annualTaxYen / MAN_YEN_TO_YEN,
@@ -202,12 +242,14 @@ export const estimateAnnualTaxAndSocialInsurance = (params: {
 export const estimateSalaryTaxAndSocialInsurance = (params: {
     annualIncomeManYen: number;
     age: number;
+    additionalDeductionYen?: number;
     context?: PolicyContext;
 }): { annualTaxManYen: number; annualSocialInsuranceManYen: number } => {
     return estimateAnnualTaxAndSocialInsurance({
         annualSalaryIncomeManYen: params.annualIncomeManYen,
         annualPublicPensionIncomeManYen: 0,
         age: params.age,
+        additionalDeductionYen: params.additionalDeductionYen,
         context: params.context
     });
 };
@@ -216,22 +258,43 @@ export const getOldAgeBasicPensionAnnualManYen = (): number => {
     return pensionRules.old_age_basic_pension.annual_amount / MAN_YEN_TO_YEN;
 };
 
-export const getAdjustedBasicPensionAnnualManYen = (claimAge: number): number => {
+export const getPensionClaimAdjustmentFactor = (claimAge: number): number => {
     const defaultClaimAge = pensionRules.old_age_basic_pension.default_claim_age;
-    const base = getOldAgeBasicPensionAnnualManYen();
     const monthDiff = (claimAge - defaultClaimAge) * 12;
 
     if (monthDiff < 0) {
         const reduction = Math.min(Math.abs(monthDiff) * pensionRules.early_claim_adjustment.monthly_rate, pensionRules.early_claim_adjustment.max_reduction);
-        return base * (1 - reduction);
+        return 1 - reduction;
     }
 
     if (monthDiff > 0) {
         const increase = Math.min(monthDiff * pensionRules.deferred_claim_adjustment.monthly_rate, pensionRules.deferred_claim_adjustment.max_increase);
-        return base * (1 + increase);
+        return 1 + increase;
     }
 
-    return base;
+    return 1;
+};
+
+export const getAdjustedBasicPensionAnnualManYen = (claimAge: number): number => {
+    return getOldAgeBasicPensionAnnualManYen() * getPensionClaimAdjustmentFactor(claimAge);
+};
+
+export const estimateBasicPensionAnnualManYen = (params: {
+    claimAge: number;
+    coverageMonths: number;
+}): number => {
+    const coverageRatio = clamp(Math.max(0, params.coverageMonths) / FULL_BASIC_PENSION_COVERAGE_MONTHS, 0, 1);
+    return getAdjustedBasicPensionAnnualManYen(params.claimAge) * coverageRatio;
+};
+
+export const estimateEmployeePensionAnnualManYen = (params: {
+    claimAge: number;
+    salaryHistoryAnnualManYen: number[];
+}): number => {
+    const baseAnnualManYen = params.salaryHistoryAnnualManYen.reduce((sum, annualSalaryManYen) => {
+        return sum + Math.max(0, annualSalaryManYen) * EMPLOYEE_PENSION_ACCRUAL_RATE;
+    }, 0);
+    return baseAnnualManYen * getPensionClaimAdjustmentFactor(params.claimAge);
 };
 
 export const capContributionByPolicyRules = (params: {

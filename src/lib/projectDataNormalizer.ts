@@ -7,6 +7,7 @@ const incomeCategories = new Set([
     'private_pension',
     'individual_pension',
     'child_allowance',
+    'retirement',
     'other'
 ]);
 
@@ -99,7 +100,20 @@ export const normalizeProjectData = (data: ProjectData): ProjectData => {
                 interval,
                 rateCategory: rateCategories.has(event.rateCategory) ? event.rateCategory : 'none'
             };
-        })
+        }),
+        educationPlans: withPolicy.educationPlans.map((plan) => ({
+            ...plan,
+            stages: Array.isArray(plan.stages)
+                ? plan.stages.map((stage) => ({
+                    ...stage,
+                    startAge: Math.floor(toFiniteNumber(stage.startAge, 0)),
+                    endAge: Math.floor(toFiniteNumber(stage.endAge, stage.startAge)),
+                    totalAmount: stage.totalAmount === undefined || stage.totalAmount === null
+                        ? undefined
+                        : toFiniteNumber(stage.totalAmount, 0)
+                }))
+                : undefined
+        }))
     };
 
     return normalized;

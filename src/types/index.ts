@@ -8,7 +8,7 @@ export interface Person {
     relation: 'self' | 'spouse' | 'child' | 'other';
 }
 
-export type IncomeCategory = 'salary' | 'public_pension' | 'private_pension' | 'individual_pension' | 'child_allowance' | 'other';
+export type IncomeCategory = 'salary' | 'public_pension' | 'private_pension' | 'individual_pension' | 'child_allowance' | 'retirement' | 'other';
 
 export interface Income {
     id: string;
@@ -82,10 +82,20 @@ export interface EducationTemplate {
     yearlyCosts: { age: number; amount: number }[]; // 子どもの年齢: 金額(万円)
 }
 
+export interface EducationStage {
+    id: string;
+    name: string;
+    category?: string;
+    startAge: number;
+    endAge: number;
+    totalAmount?: number; // その区分の累計額 (万円)
+}
+
 export interface EducationPlan {
     childId: string;
     templateName?: string;
     totalAmountOverride?: number; // 累計スケーリング用 (万円)
+    stages?: EducationStage[];
 }
 
 export interface InterestPeriod {
@@ -143,6 +153,9 @@ export interface SimulationSettings {
         employmentInsuranceBusinessType?: 'general' | 'agriculture_forestry_fisheries_sake' | 'construction';
         residentTaxPerCapitaYen?: number;
         residentTaxPerCapitaExtraYen?: number;
+        investmentTaxRate?: number;
+        nisaLifetimeLimitManYen?: number;
+        nisaLifetimeUsedManYen?: number;
         salaryBonusRatio?: number;
         bonusPaymentsPerYear?: number;
         socialInsuranceModel?: 'employee' | 'national';
@@ -152,9 +165,14 @@ export interface SimulationSettings {
         nationalPensionMonthlyYen?: number;
         nationalPensionStartAge?: number;
         nationalPensionEndAge?: number;
+        autoSpouseDeductionEnabled?: boolean;
+        autoDependentDeductionEnabled?: boolean;
+        retirementYearsOfService?: number;
         deductionSpouseYen?: number;
         deductionMedicalYen?: number;
         deductionOtherYen?: number;
+        publicPensionAutoCalculationEnabled?: boolean;
+        publicPensionClaimAge?: number;
         idecoCategory?: 'self_employed' | 'company_employee_no_corporate_pension' | 'company_employee_with_corporate_pension' | 'public_servant' | 'dependent_spouse';
     };
 }
